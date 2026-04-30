@@ -574,7 +574,7 @@ function AutoTab({ accent }: { accent: string }) {
         .or('no_wa.eq.true,status.eq.annule')
         .eq('is_test', false)
         .order('created_at', { ascending: false })
-      setOrders((data || []) as Order[])
+      setOrders((data || []) as unknown as Order[])
       setLoading(false)
     }
     load()
@@ -752,7 +752,7 @@ function OrdersTab({ accent }: { accent: string }) {
       .eq('is_test', false)
       .order('created_at', { ascending: false })
       .limit(50)
-    setOrders((data || []) as Order[])
+    setOrders((data || []) as unknown as Order[]
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
