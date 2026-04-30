@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  /* Couleurs COLIOO */
+  --orange-primary: #FF6B00;
+  --charcoal: #333333;
+  --white: #FFFFFF;
+  --accent-blue: #007BFF;
+  --success: #28A745;
+  --error: #DC3545;
+  --disabled: #CCCCCC;
+  
+  /* Nouveau style Blueprint */
+  --bg-main: #FAFAF8;
+  --bg-sidebar: #1a1a2e;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* Polices */
+  --font-poppins: var(--font-poppins);
+  --font-inter: var(--font-inter);
+}
+
+@theme inline {
+  --color-orange-primary: var(--orange-primary);
+  --color-charcoal: var(--charcoal);
+  --color-white: var(--white);
+  --color-accent-blue: var(--accent-blue);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-disabled: var(--disabled);
+  --color-bg-main: var(--bg-main);
+  --color-bg-sidebar: var(--bg-sidebar);
+
+  --font-poppins: var(--font-poppins);
+  --font-inter: var(--font-inter);
+}
+
+body {
+  background: var(--bg-main);
+  color: var(--charcoal);
+  font-family: var(--font-inter), sans-serif;
+  line-height: 1.7;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Style Blueprint - Cards */
+.card {
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Style Blueprint - Boutons */
+.btn-primary {
+  background: var(--orange-primary);
+  color: white;
+  border-radius: 50px;
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #e55f00;
+  transform: translateY(-1px);
+}
+
+/* Style Blueprint - Inputs */
+.input {
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+  padding: 12px 16px;
+  font-family: var(--font-inter), sans-serif;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+}
+
+/* Scrollbar hide */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
