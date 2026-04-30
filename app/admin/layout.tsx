@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3000))
         const authPromise = supabase.auth.getUser()
         const result = await Promise.race([authPromise, timeoutPromise])
-        if (result && 'data' in result) {
+        if (result && typeof result === 'object' && 'data' in result) {
           const { data: { user } } = result as { data: { user: unknown } }
           if (!user) { router.push('/admin/login'); return }
         }
