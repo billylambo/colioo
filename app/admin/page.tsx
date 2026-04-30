@@ -1081,7 +1081,7 @@ export default function AdminPage() {
       const today = new Date().toISOString().slice(0, 10)
       const { data: allOrders } = await supabase.from('orders').select('total_price, created_at, status').eq('is_test', false).order('created_at', { ascending: false })
       const { data: latest } = await supabase.from('orders').select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, product:product_id(name)').eq('is_test', false).order('created_at', { ascending: false }).limit(1)
-      if (latest?.[0]) setLatestOrder(latest[0] as Order)
+      if (latest?.[0]) setLatestOrder(latest[0] as unknown as Order)
       const rows = allOrders || []
       const todayRows = rows.filter((o: any) => o.created_at?.startsWith(today))
       const ca_today = todayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
