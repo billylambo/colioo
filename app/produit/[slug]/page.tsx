@@ -170,7 +170,6 @@ export default function ProductPage({ params }: PageProps) {
       const totalFinal = product.price * quantity + totalUpsells
 
       const { error } = await supabase.from('orders').insert({
-        is_test: (product as any).is_test_mode === true,
         product_id: product.id,
         customer_name: formName,
         customer_phone: phoneComplet,
@@ -179,7 +178,7 @@ export default function ProductPage({ params }: PageProps) {
         status: 'nouveau',
         options_chosen: { couleur: selectedCouleur, taille: selectedTaille, grammage: selectedGrammage },
         order_number: orderNum,
-        is_test: product.sections?.is_test_mode === true || (product as any).is_test_mode === true,
+        is_test: (product as any).is_test_mode === true,
       })
       if (error) { alert('Erreur: ' + error.message); return }
 
