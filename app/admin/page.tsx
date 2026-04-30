@@ -490,7 +490,7 @@ function ProspectsTab({ accent }: { accent: string }) {
         .select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, options_chosen, product:product_id(name, slug)')
         .eq('is_test', true)
         .order('created_at', { ascending: false })
-      setProspects((data || []) as Order[])
+      setProspects((data || []) as unknown as Order[])
       setLoading(false)
     }
     load()
