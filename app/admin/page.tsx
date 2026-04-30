@@ -574,7 +574,7 @@ function AutoTab({ accent }: { accent: string }) {
         .or('no_wa.eq.true,status.eq.annule')
         .eq('is_test', false)
         .order('created_at', { ascending: false })
-      setOrders((data || []) as unknown as Order[])git add .
+      setOrders((data || []) as unknown as Order[])
       setLoading(false)
     }
     load()
