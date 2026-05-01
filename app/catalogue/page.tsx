@@ -204,6 +204,7 @@ export default function CataloguePage() {
       const { data: prods, error } = await supabase
         .from('products')
         .select('id, name, price, original_price, slug, badge, category_id, product_images(url)')
+        .eq('is_published', true)
         .order('created_at', { ascending: false })
 
       if (error) console.error('Produits:', error.message)
