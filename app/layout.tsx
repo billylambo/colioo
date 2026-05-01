@@ -30,18 +30,17 @@ export default function RootLayout({
       className={`${poppins.variable} ${inter.variable} h-full antialiased`}
     >
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="theme-color" content="#ffffff" />
-        <link rel="manifest" href="/manifest.json" />
-<link rel="apple-touch-icon" href="/icon-180.png" />
-<meta name="theme-color" content="#FF6B00" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="COLIOO" />
-      </head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="COLIOO" />
+  <meta name="theme-color" content="#FF6B00" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-180.png" />
+  <link rel="icon" href="/icon-32.png" sizes="32x32" />
+  <link rel="icon" href="/icon-192.png" sizes="192x192" />
+</head>
       <body
         className="min-h-full flex flex-col"
         style={{ backgroundColor: '#F2F2F7', margin: 0, padding: 0, overflowX: 'hidden' }}
