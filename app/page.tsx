@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import TickerBanner from '@/components/ui/TickerBanner'
-import SocialProof from '@/components/ui/SocialProof'
+
 
 interface Product {
   id: string
@@ -308,10 +307,10 @@ export default function HomePage() {
       <div style={{ background: bgColor, minHeight: '100dvh', paddingBottom: 20 }}>
 
         {/* ── Ticker Banner défilant ── */}
-        <TickerBanner />
+        
 
         {/* ── Social Proof pop-ups ── */}
-        <SocialProof />
+        
 
         {/* ── Header sticky ── */}
         <div style={{ background: 'rgba(255,255,255,.95)', backdropFilter: 'blur(20px)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(0,0,0,.06)', position: 'sticky', top: 0, zIndex: 40 }}>
