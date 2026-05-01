@@ -8,7 +8,19 @@ interface AdminSidebarProps {
   children: React.ReactNode
 }
 
-const menuGroups = [
+interface NavItem {
+  href: string
+  label: string
+  icon: string
+  badge?: string
+}
+
+interface MenuGroup {
+  title: string
+  items: NavItem[]
+}
+
+const menuGroups: MenuGroup[] = [
   {
     title: 'Principal',
     items: [
@@ -54,14 +66,12 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
     <div className="min-h-screen flex">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-[#1a1a2e] fixed h-screen">
-        {/* Logo */}
         <div className="p-6 border-b border-white/10">
           <Link href="/" className="text-2xl font-extrabold text-white font-poppins">
             COLIOO
           </Link>
         </div>
 
-        {/* Menu */}
         <nav className="flex-1 p-4 overflow-y-auto">
           {menuGroups.map((group, groupIndex) => (
             <div key={groupIndex} className="mb-6">
@@ -85,7 +95,7 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
                       </svg>
                       <span className="font-inter text-sm">{item.label}</span>
                     </div>
-                    {'badge' in item && item.badge && (
+                    {item.badge && (
                       <span className="bg-error text-white text-xs px-2 py-0.5 rounded-full">
                         {item.badge}
                       </span>
@@ -97,7 +107,6 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
           ))}
         </nav>
 
-        {/* Logout */}
         <div className="p-4 border-t border-white/10">
           <Link href="/" className="flex items-center gap-3 px-3 py-2.5 text-gray-400 hover:text-white transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -148,7 +157,7 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
                         </svg>
                         <span className="font-inter text-sm">{item.label}</span>
                       </div>
-                      {'badge' in item && item.badge && (
+                      {item.badge && (
                         <span className="bg-error text-white text-xs px-2 py-0.5 rounded-full">
                           {item.badge}
                         </span>
@@ -164,7 +173,6 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-64">
-        {/* Mobile Header */}
         <header className="lg:hidden fixed top-0 left-0 right-0 bg-[#1a1a2e] z-50 px-4 py-3 flex items-center justify-between">
           <button onClick={() => setMenuOpen(true)} className="p-2 -ml-2 text-white">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -177,7 +185,6 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
           <div className="w-10"></div>
         </header>
 
-        {/* Content */}
         <main className="p-4 lg:p-8 pt-16 lg:pt-8 bg-[#FAFAF8] min-h-screen">
           {children}
         </main>
