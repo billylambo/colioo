@@ -104,6 +104,7 @@ export default function ProductPage({ params }: PageProps) {
   const [quartierAutre, setQuartierAutre] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [isFromAd, setIsFromAd] = useState(false)
 
   const [selectedCouleur, setSelectedCouleur] = useState('')
   const [selectedTaille, setSelectedTaille] = useState('')
@@ -145,6 +146,13 @@ useEffect(() => {
             else map[row.key] = String(raw ?? '')
           }
           setSettings(map)
+          // Détection pub Facebook/TikTok
+        const params_url = new URLSearchParams(window.location.search)
+        const fromAd = params_url.has('fbclid') || params_url.has('ttclid') || 
+          params_url.get('utm_source') === 'facebook' || 
+          params_url.get('utm_source') === 'tiktok' ||
+          params_url.get('utm_medium') === 'paid'
+        setIsFromAd(fromAd)
         }
         const { slug } = await params
         const { data } = await supabase
@@ -350,11 +358,18 @@ useEffect(() => {
 
       <div style={{ maxWidth: 480, margin: '0 auto', width: '100%', background: '#F2F2F7', minHeight: '100dvh', paddingBottom: 140 }}>
 
-        {product.logo_url && (
-          <div style={{ display: 'flex', justifyContent: logoJustify, padding: '12px 16px 8px', background: '#f0f0f0' }}>
-            <img src={product.logo_url} alt="Logo" style={{ height: 48, maxWidth: 160, objectFit: 'contain' }} />
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 8px', background: '#f0f0f0' }}>
+          {!isFromAd && (
+            <button onClick={() => router.push('/catalogue')} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', borderRadius: 50, background: 'rgba(0,0,0,.08)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6" /></svg>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#0D0D0D' }}>Catalogue</span>
+            </button>
+          )}
+          {product.logo_url
+            ? <img src={product.logo_url} alt="Logo" style={{ height: 40, maxWidth: 140, objectFit: 'contain', margin: isFromAd ? '0 auto' : '0 0 0 auto' }} />
+            : <div style={{ flex: 1 }} />
+          }
+        </div>
 
         <div style={{ position: 'relative', background: '#f0f0f0', overflow: 'hidden', userSelect: 'none' }}
           onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
