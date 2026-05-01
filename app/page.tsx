@@ -232,6 +232,7 @@ export default function HomePage() {
         const { data: prods } = await supabase
           .from('products')
           .select('id, name, price, original_price, slug, badge, category_id, product_images(url)')
+          .eq('is_published', true)
           .order('created_at', { ascending: false })
           .limit(12)
         if (prods) setProducts(prods as Product[])
