@@ -17,10 +17,11 @@ const cardS: React.CSSProperties = { background: '#fff', borderRadius: 16, paddi
 
 export default function PagesAdmin() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'apropos' | 'contact' | 'mentions'>('apropos')
+  const [activeTab, setActiveTab] = useState<'apropos' | 'contact' | 'mentions' | 'footer'>('apropos')
   const [apropos, setApropos] = useState<any>(null)
   const [contact, setContact] = useState<any>(null)
   const [mentions, setMentions] = useState<any>({ contenu: '', societe: '', adresse: '', email: '', telephone: '' })
+  const [footer, setFooter] = useState<any>({ slogan: 'La boutique premium pour l\'Afrique', copyright: '© 2026 COLIOO — Tous droits réservés.', liens: [{ label: 'Catalogue', href: '/catalogue' }, { label: 'À propos', href: '/a-propos' }, { label: 'Contact', href: '/contact' }, { label: 'Mentions légales', href: '/mentions-legales' }] })
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
 
@@ -35,6 +36,7 @@ export default function PagesAdmin() {
         if (s.key === 'apropos') setApropos(typeof s.value === 'string' ? JSON.parse(s.value) : s.value)
         if (s.key === 'contact') setContact(typeof s.value === 'string' ? JSON.parse(s.value) : s.value)
         if (s.key === 'mentions') setMentions(typeof s.value === 'string' ? JSON.parse(s.value) : s.value)
+        if (s.key === 'footer') setFooter(typeof s.value === 'string' ? JSON.parse(s.value) : s.value)  
       })
     }
   }
@@ -64,6 +66,7 @@ export default function PagesAdmin() {
     { id: 'apropos', label: '📄 À propos' },
     { id: 'contact', label: '📞 Contact' },
     { id: 'mentions', label: '⚖️ Mentions' },
+    { id: 'footer', label: '🦶 Footer' },
   ] as const
 
   return (
@@ -169,6 +172,32 @@ export default function PagesAdmin() {
               </button>
             </div>
           )}
+
+          {/* ── FOOTER ── */}
+          {activeTab === 'footer' && (
+            <div>
+              <div style={cardS}>
+                <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid #F2F2F7' }}>🦶 Pied de page</div>
+                <div style={rowS}><label style={labelS}>Slogan sous le nom</label><input style={inputS} value={footer.slogan || ''} onChange={e => setFooter({ ...footer, slogan: e.target.value })} placeholder="La boutique premium pour l'Afrique" /></div>
+                <div style={rowS}><label style={labelS}>Texte copyright</label><input style={inputS} value={footer.copyright || ''} onChange={e => setFooter({ ...footer, copyright: e.target.value })} placeholder="© 2026 COLIOO — Tous droits réservés." /></div>
+                <div style={rowS}>
+                  <label style={labelS}>Liens du footer</label>
+                  {(footer.liens || []).map((lien: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <input style={{ ...inputS, flex: 1 }} value={lien.label || ''} placeholder="Libellé" onChange={e => { const l = [...footer.liens]; l[i] = { ...l[i], label: e.target.value }; setFooter({ ...footer, liens: l }) }} />
+                      <input style={{ ...inputS, flex: 1 }} value={lien.href || ''} placeholder="/page" onChange={e => { const l = [...footer.liens]; l[i] = { ...l[i], href: e.target.value }; setFooter({ ...footer, liens: l }) }} />
+                      <button onClick={() => setFooter({ ...footer, liens: footer.liens.filter((_: any, j: number) => j !== i) })} style={{ width: 36, height: 46, borderRadius: 12, background: '#FFF0F0', border: 'none', color: '#FF3B30', cursor: 'pointer', fontSize: 18, fontWeight: 900, flexShrink: 0 }}>×</button>
+                    </div>
+                  ))}
+                  <button onClick={() => setFooter({ ...footer, liens: [...(footer.liens || []), { label: '', href: '/' }] })} style={{ fontSize: 13, color: accent, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }}>+ Ajouter un lien</button>
+                </div>
+              </div>
+              <button onClick={() => saveSettings('footer', footer)} disabled={saving} style={{ width: '100%', height: 50, borderRadius: 16, background: `linear-gradient(135deg,${accent},${accent}cc)`, border: 'none', color: '#fff', fontSize: 15, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', opacity: saving ? .7 : 1 }}>
+                {saving ? 'Sauvegarde…' : '💾 Sauvegarder'}
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
     </>

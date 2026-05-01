@@ -267,6 +267,11 @@ export default function HomePage() {
   const heroCTA      = g('hero_cta_text', 'Commander Maintenant')
   const heroCTAUrl   = g('hero_cta_url', '/catalogue')
   const whatsapp     = g('whatsapp', '2250000000000')
+  const footerSlogan    = g('footer', '{}') 
+  const footerData      = (() => { try { return JSON.parse(footerSlogan) } catch { return {} } })()
+  const footerSloganTxt = footerData.slogan || 'La boutique premium pour l\'Afrique'
+  const footerCopyright = footerData.copyright || `© 2026 ${siteName} — Tous droits réservés.`
+  const footerLiens     = footerData.liens || [['Catalogue', '/catalogue'], ['À propos', '/a-propos'], ['Contact', '/contact'], ['Mentions légales', '/mentions-legales']]
   const fontHeading  = g('font_heading', 'Poppins')
   const fontBody     = g('font_body', 'Inter')
 
@@ -525,13 +530,15 @@ export default function HomePage() {
         {/* Footer */}
         <div style={{ background: '#111', padding: '22px 16px 40px', marginTop: 16 }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: 1, marginBottom: 4 }}>{siteName}</div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 16 }}>La boutique premium pour l'Afrique</p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 16 }}>{footerSloganTxt}</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-            {[['Livraison', '/'], ['Retours', '/'], ['Conditions', '/mentions-legales'], ['Contact', '/contact'], ['Catalogue', '/catalogue'], ['À propos', '/a-propos']].map(([l, h]) => (
-              <span key={l} onClick={() => router.push(h)} style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', cursor: 'pointer' }}>{l}</span>
-            ))}
+            {(Array.isArray(footerLiens) ? footerLiens : []).map((lien: any, i: number) => {
+              const label = Array.isArray(lien) ? lien[0] : lien.label
+              const href = Array.isArray(lien) ? lien[1] : lien.href
+              return <span key={i} onClick={() => router.push(href)} style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', cursor: 'pointer' }}>{label}</span>
+            })}
           </div>
-          <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.08)', fontSize: 11, color: 'rgba(255,255,255,.18)' }}>© 2026 {siteName} — Tous droits réservés.</div>
+          <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.08)', fontSize: 11, color: 'rgba(255,255,255,.18)' }}>{footerCopyright}</div>
         </div>
 
       </div>
