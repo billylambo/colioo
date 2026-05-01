@@ -1035,8 +1035,9 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
       <div style={{ background: '#fff', borderRadius: 16, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 12 }}>🔗 Navigation rapide</div>
         {[
+          { icon: '🎨', label: 'Paramètres du site', sub: 'Logo, couleurs, hero…', href: '/admin/parametres' },
           { icon: '🏠', label: 'Paramètres accueil', sub: 'Sections homepage', href: '/admin/parametres/accueil' },
-          { icon: '📄', label: 'Pages statiques', sub: 'À propos, Contact…', href: '/admin/parametres/pages' },
+          { icon: '📄', label: 'Pages statiques', sub: 'À propos, Contact, Footer…', href: '/admin/parametres/pages' },
           { icon: '🛍️', label: 'Tous les produits', sub: 'Gestion complète', href: '/admin/produits' },
           { icon: '📦', label: 'Toutes les commandes', sub: 'Vue complète', href: '/admin/commandes' },
           { icon: '📊', label: 'Analytics', sub: 'Statistiques détaillées', href: '/admin/analytics' },
