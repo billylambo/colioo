@@ -280,16 +280,7 @@ function OverviewTab({ stats, latestOrder, accent, funnel }: { stats: DashboardS
   }, [latestOrder])
   return (
     <div>
-      {notif && latestOrder && (
-        <div style={{ background: `linear-gradient(135deg,${accent},${accent}bb)`, borderRadius: 16, padding: '13px 14px', marginBottom: 12, color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🛒</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 900 }}>Nouvelle commande — {latestOrder.customer_name}</div>
-            <div style={{ fontSize: 11, opacity: .85 }}>{latestOrder.product?.name || 'Produit'} · {fmt(latestOrder.total_price)} · Il y a {timeAgo(latestOrder.created_at)}</div>
-          </div>
-          <button onClick={() => setNotif(false)} style={{ background: 'rgba(255,255,255,.2)', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', color: '#fff', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-        </div>
-      )}
+      
       <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
         <MetricCard label="CA AUJOURD'HUI" value={stats.ca_today >= 1000 ? `${Math.round(stats.ca_today / 1000)}k` : fmt(stats.ca_today)} change="vs hier" pos={true} color={accent} spark={stats.ca_week} />
         <MetricCard label="COMMANDES" value={String(stats.orders_today)} change="aujourd'hui" pos={true} color="#007AFF" spark={stats.orders_week} />
