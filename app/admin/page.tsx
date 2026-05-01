@@ -1051,6 +1051,13 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
       </div>
 
       <ResetSiteButton accent={accent} />
+
+      <button
+        onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }}
+        style={{ width: '100%', height: 38, borderRadius: 12, background: 'none', border: '1.5px solid #E5E5EA', color: '#AEAEB2', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 10 }}
+      >
+        🚪 Se déconnecter
+      </button>
     </div>
   )
 }
