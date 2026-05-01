@@ -148,7 +148,7 @@ export default function AdminSidebar({ children }: AdminSidebarProps) {
                         </svg>
                         <span className="font-inter text-sm">{item.label}</span>
                       </div>
-                      {item.badge && (
+                      {'badge' in item && item.badge && (
                         <span className="bg-error text-white text-xs px-2 py-0.5 rounded-full">
                           {item.badge}
                         </span>
