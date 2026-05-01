@@ -1067,6 +1067,7 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
 export default function AdminPage() {
   const [tab, setTab] = useState<'overview' | 'products' | 'orders' | 'auto' | 'settings'>('overview')
   const [accent, setAccent] = useState('#FF2D55')
+  const [siteName, setSiteName] = useState('COLIOO')
   const [stats, setStats] = useState<DashboardStats>({ ca_today: 0, orders_today: 0, orders_total: 0, panier_moyen: 0, ca_week: [0,0,0,0,0,0,0], orders_week: [0,0,0,0,0,0,0] })
   const [latestOrder, setLatestOrder] = useState<Order | undefined>()
   const [funnel, setFunnel] = useState<FunnelStats>({ visitors: 0, product_views: 0, forms: 0, orders: 0, delivered: 0 })
@@ -1075,6 +1076,8 @@ export default function AdminPage() {
     supabase.from('settings').select('key, value').then(({ data }) => {
       const c = (data || []).find((r: any) => r.key === 'primary_color')
       if (c?.value) setAccent(String(c.value).replace(/^"|"$/g, ''))
+      const n = (data || []).find((r: any) => r.key === 'site_name')
+      if (n?.value) setSiteName(String(n.value).replace(/^"|"$/g, ''))
     })
     const loadStats = async () => {
       const today = new Date().toISOString().slice(0, 10)
@@ -1122,9 +1125,9 @@ export default function AdminPage() {
 
         {/* Header */}
         <div style={{ background: '#fff', borderBottom: '1px solid #E5E5EA', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${accent},${accent}bb)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16, flexShrink: 0 }}>C</div>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${accent},${accent}bb)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16, flexShrink: 0 }}>{siteName[0]}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 900 }}>Colioo Admin</div>
+            <div style={{ fontSize: 15, fontWeight: 900 }}>{siteName} Admin</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34C759' }} />
               <span style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>En ligne · Admin</span>
