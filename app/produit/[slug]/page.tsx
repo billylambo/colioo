@@ -103,6 +103,7 @@ export default function ProductPage({ params }: PageProps) {
   const [quartier, setQuartier] = useState('')
   const [quartierAutre, setQuartierAutre] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const [selectedCouleur, setSelectedCouleur] = useState('')
   const [selectedTaille, setSelectedTaille] = useState('')
@@ -243,10 +244,13 @@ useEffect(() => {
         .split('?')[0]
         .split('/message/')[0]
       const url = `https://wa.me/${waClean}?text=${encodeURIComponent(message)}`
-      window.open(url, '_blank')
-
       setFormName(''); setPhoneNum(''); setVille(''); setVilleAutre(''); setQuartier(''); setQuartierAutre('')
+      setUpsells([])
       setDrawerOpen(false)
+      setShowSuccess(true)
+      setTimeout(() => {
+        window.open(url, '_blank')
+      }, 300)
     } catch (e) {
       console.error(e)
     } finally {
@@ -328,6 +332,19 @@ useEffect(() => {
         @keyframes shimmer {
           0% { transform: translateX(-150%) skewX(-20deg); }
           100% { transform: translateX(350%) skewX(-20deg); }
+          @keyframes confettiFall {
+          0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes popIn {
+          0% { transform: scale(0.5) translateY(40px); opacity: 0; }
+          70% { transform: scale(1.08) translateY(-8px); opacity: 1; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         }
       `}</style>
 
@@ -923,6 +940,74 @@ useEffect(() => {
         </div>
 
       </div>
+      {/* SUCCESS POPUP */}
+      {showSuccess && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px', background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setShowSuccess(false)}>
+
+          {/* Confettis */}
+          {[...Array(24)].map((_, i) => {
+            const colors = [accent, '#FFD700', '#FF6B6B', '#4ADE80', '#60A5FA', '#F472B6', '#FBBF24', '#A78BFA']
+            const color = colors[i % colors.length]
+            const left = `${(i * 4.2) % 100}%`
+            const delay = `${(i * 0.08)}s`
+            const duration = `${1.8 + (i % 5) * 0.3}s`
+            const size = 6 + (i % 4) * 3
+            const shapes = ['50%', '0%', '0%', '50%']
+            const shape = shapes[i % shapes.length]
+            return (
+              <div key={i} style={{
+                position: 'fixed', top: '-20px', left, width: size, height: size,
+                background: color, borderRadius: shape,
+                animation: `confettiFall ${duration} ${delay} ease-in forwards`,
+                pointerEvents: 'none', zIndex: 201,
+                transform: `rotate(${i * 15}deg)`
+              }} />
+            )
+          })}
+
+          {/* Card */}
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#fff', borderRadius: 28, padding: '36px 28px 28px',
+            textAlign: 'center', width: '100%', maxWidth: 360, position: 'relative',
+            animation: 'popIn .5s cubic-bezier(.32,.72,0,1) forwards',
+            boxShadow: '0 32px 80px rgba(0,0,0,.25)'
+          }}>
+
+            {/* Icône */}
+            <div style={{ width: 80, height: 80, borderRadius: '50%', background: `linear-gradient(135deg,${accent},${accent}99)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 20px', boxShadow: `0 12px 32px ${accent}44`, animation: 'float 2.5s ease-in-out infinite' }}>
+              🎉
+            </div>
+
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0D0D0D', marginBottom: 8, lineHeight: 1.2 }}>
+              Commande confirmée !
+            </h2>
+            <p style={{ fontSize: 14, color: '#6B6B6B', lineHeight: 1.65, marginBottom: 24, animation: 'fadeInUp .4s .2s both' }}>
+              Merci pour votre commande 🙏<br />
+              Notre équipe va vous contacter très bientôt sur <strong style={{ color: '#25D366' }}>WhatsApp</strong> pour confirmer la livraison.
+            </p>
+
+            {/* Badges */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap', animation: 'fadeInUp .4s .3s both' }}>
+              {['💵 Paiement à livraison', '🚚 Livraison 24–48h', '🔒 Sécurisé'].map(t => (
+                <span key={t} style={{ fontSize: 11, fontWeight: 700, color: '#6B6B6B', background: '#F2F2F7', borderRadius: 20, padding: '4px 10px' }}>{t}</span>
+              ))}
+            </div>
+
+            <button onClick={() => setShowSuccess(false)} style={{
+              width: '100%', height: 50, borderRadius: borderBtn,
+              background: `linear-gradient(135deg,${accent},${accent}cc)`,
+              border: 'none', color: '#fff', fontSize: 15, fontWeight: 900,
+              cursor: 'pointer', fontFamily: 'inherit',
+              boxShadow: `0 8px 24px ${accent}44`,
+              animation: 'fadeInUp .4s .4s both'
+            }}>
+              ✨ Continuer mes achats
+            </button>
+          </div>
+        </div>
+      )}
+
     </>
   )
 }
