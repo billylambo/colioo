@@ -108,6 +108,23 @@ export default function ProductPage({ params }: PageProps) {
   const [selectedTaille, setSelectedTaille] = useState('')
   const [selectedGrammage, setSelectedGrammage] = useState('')
 
+useEffect(() => {
+  if (drawerOpen) {
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+  } else {
+    document.body.style.overflow = ''
+    document.body.style.position = ''
+    document.body.style.width = ''
+  }
+  return () => {
+    document.body.style.overflow = ''
+    document.body.style.position = ''
+    document.body.style.width = ''
+  }
+}, [drawerOpen])
+
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
   const indicatifRef = useRef<HTMLDivElement>(null)
@@ -288,12 +305,12 @@ export default function ProductPage({ params }: PageProps) {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', height: 50, borderRadius: 14, border: '1.5px solid #E5E5EA',
-    padding: '0 16px', fontSize: 15, fontFamily: 'inherit', outline: 'none',
+    padding: '0 16px', fontSize: 16, fontFamily: 'inherit', outline: 'none',
     background: '#FAFAFA', boxSizing: 'border-box'
   }
   const selectStyle: React.CSSProperties = {
     width: '100%', height: 50, borderRadius: 14, border: '1.5px solid #E5E5EA',
-    padding: '0 16px', fontSize: 15, fontFamily: 'inherit', outline: 'none',
+    padding: '0 16px', fontSize: 16, fontFamily: 'inherit', outline: 'none',
     background: '#FAFAFA', boxSizing: 'border-box', cursor: 'pointer',
     appearance: 'none', WebkitAppearance: 'none',
   }
