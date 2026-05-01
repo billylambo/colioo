@@ -150,7 +150,7 @@ export default function ParametresPage() {
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F2F2F7; } input, textarea, select { font-family: inherit; }`}</style>
       <Toast msg={toast} />
 
-      <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 40 }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 40 }}>
 
         {/* Header */}
         <div style={{ background: '#fff', borderBottom: '1px solid #E5E5EA', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
