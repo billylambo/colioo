@@ -51,9 +51,13 @@ export default function Categories() {
 
   const deleteCategory = async (id: string) => {
     if (!confirm('Supprimer cette catégorie ?')) return
-    await supabase.from('categories').delete().eq('id', id)
-    setCategories(prev => prev.filter(c => c.id !== id))
-    showToast('🗑️ Catégorie supprimée')
+    const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      setCategories(prev => prev.filter(c => c.id !== id))
+      showToast('🗑️ Catégorie supprimée')
+    } else {
+      showToast('❌ Erreur lors de la suppression')
+    }
   }
 
   return (
