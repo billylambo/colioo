@@ -104,7 +104,14 @@ export default function ProductPage({ params }: PageProps) {
   const [quartierAutre, setQuartierAutre] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [isFromAd, setIsFromAd] = useState(false)
+  const [isFromAd, setIsFromAd] = useState(() => {
+  if (typeof window === 'undefined') return false
+  const p = new URLSearchParams(window.location.search)
+  return p.has('fbclid') || p.has('ttclid') ||
+    p.get('utm_source') === 'facebook' ||
+    p.get('utm_source') === 'tiktok' ||
+    p.get('utm_medium') === 'paid'
+})
 
   const [selectedCouleur, setSelectedCouleur] = useState('')
   const [selectedTaille, setSelectedTaille] = useState('')
@@ -146,13 +153,7 @@ useEffect(() => {
             else map[row.key] = String(raw ?? '')
           }
           setSettings(map)
-          // Détection pub Facebook/TikTok
-        const params_url = new URLSearchParams(window.location.search)
-        const fromAd = params_url.has('fbclid') || params_url.has('ttclid') || 
-          params_url.get('utm_source') === 'facebook' || 
-          params_url.get('utm_source') === 'tiktok' ||
-          params_url.get('utm_medium') === 'paid'
-        setIsFromAd(fromAd)
+         
         }
         const { slug } = await params
         const { data } = await supabase
