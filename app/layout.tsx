@@ -15,8 +15,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "COLIOO - Marketplace Ivoirienne",
-  description: "Import & Livraison Domicile - Produits importés de Chine",
+  title: "COLISMAX - Livraison depuis la Chine",
+  description: "Commandez directement depuis les usines chinoises. Livraison en Côte d'Ivoire en 15-21 jours.",
 };
 
 export default function RootLayout({
@@ -30,17 +30,33 @@ export default function RootLayout({
       className={`${poppins.variable} ${inter.variable} h-full antialiased`}
     >
       <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="COLIOO" />
-  <meta name="theme-color" content="#FF6B00" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="apple-touch-icon" href="/icon-180.png" />
-  <link rel="icon" href="/icon-32.png" sizes="32x32" />
-  <link rel="icon" href="/icon-192.png" sizes="192x192" />
-</head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="COLISMAX" />
+        <meta name="theme-color" content="#FF6B00" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-180.png" />
+        <link rel="icon" href="/icon-32.png" sizes="32x32" />
+        <link rel="icon" href="/icon-192.png" sizes="192x192" />
+
+        {/* ── Google Analytics 4 ── */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-VZHWEYHVEM" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-VZHWEYHVEM', {
+                page_title: document.title,
+                page_location: window.location.href,
+              });
+            `
+          }}
+        />
+      </head>
       <body
         className="min-h-full flex flex-col"
         style={{ backgroundColor: '#F2F2F7', margin: 0, padding: 0, overflowX: 'hidden' }}
