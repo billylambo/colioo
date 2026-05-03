@@ -271,24 +271,92 @@ function TopProduitsSection({ accent }: { accent: string }) {
   )
 }
 
-function OverviewTab({ stats, latestOrder, accent, funnel }: { stats: DashboardStats; latestOrder?: Order; accent: string; funnel: FunnelStats }) {
-  const [notif, setNotif] = useState(false)
-  useEffect(() => {
-    if (!latestOrder) return
-    const diffMinutes = (Date.now() - new Date(latestOrder.created_at).getTime()) / 1000 / 60
-    setNotif(diffMinutes < 30)
-  }, [latestOrder])
+function OverviewTab({ stats, extraStats, latestOrder, accent, funnel }: {
+  stats: DashboardStats
+  extraStats: { ca_yesterday: number; orders_yesterday: number; ca_month: number; orders_month: number; cancelled: number; new_orders: number; taux_livraison: number; taux_annulation: number }
+  latestOrder?: Order
+  accent: string
+  funnel: FunnelStats
+}) {
+  const caVsHier = extraStats.ca_yesterday > 0
+    ? Math.round(((stats.ca_today - extraStats.ca_yesterday) / extraStats.ca_yesterday) * 100)
+    : 0
+  const ordersVsHier = extraStats.orders_yesterday > 0
+    ? Math.round(((stats.orders_today - extraStats.orders_yesterday) / extraStats.orders_yesterday) * 100)
+    : 0
+
   return (
     <div>
-      
-      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-        <MetricCard label="CA AUJOURD'HUI" value={stats.ca_today >= 1000 ? `${Math.round(stats.ca_today / 1000)}k` : fmt(stats.ca_today)} change="vs hier" pos={true} color={accent} spark={stats.ca_week} />
-        <MetricCard label="COMMANDES" value={String(stats.orders_today)} change="aujourd'hui" pos={true} color="#007AFF" spark={stats.orders_week} />
+      {/* Alerte nouvelle commande */}
+      {latestOrder && extraStats.new_orders > 0 && (
+        <div style={{ background: `linear-gradient(135deg,${accent}15,${accent}08)`, border: `1px solid ${accent}30`, borderRadius: 14, padding: '12px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, animation: 'pulse 2s infinite' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#0D0D0D' }}>🔔 {extraStats.new_orders} commande{extraStats.new_orders > 1 ? 's' : ''} en attente</div>
+            <div style={{ fontSize: 11, color: '#6B6B6B', marginTop: 2 }}>Dernière : {latestOrder.customer_name} — {latestOrder.total_price.toLocaleString('fr-FR')} FCFA</div>
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: accent, background: accent + '15', borderRadius: 8, padding: '3px 8px' }}>⚡ NOUVEAU</div>
+        </div>
+      )}
+
+      {/* Métriques aujourd'hui */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <MetricCard
+          label="CA AUJOURD'HUI"
+          value={stats.ca_today >= 1000 ? `${Math.round(stats.ca_today / 1000)}k` : fmt(stats.ca_today)}
+          change={caVsHier === 0 ? 'vs hier' : `${caVsHier > 0 ? '+' : ''}${caVsHier}% vs hier`}
+          pos={caVsHier >= 0}
+          color={accent}
+          spark={stats.ca_week}
+        />
+        <MetricCard
+          label="COMMANDES"
+          value={String(stats.orders_today)}
+          change={ordersVsHier === 0 ? 'aujourd\'hui' : `${ordersVsHier > 0 ? '+' : ''}${ordersVsHier}% vs hier`}
+          pos={ordersVsHier >= 0}
+          color="#007AFF"
+          spark={stats.orders_week}
+        />
       </div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-        <MetricCard label="TOTAL COMMANDES" value={String(stats.orders_total)} change="depuis le début" pos={true} color="#34C759" spark={stats.orders_week} />
-        <MetricCard label="PANIER MOYEN" value={stats.panier_moyen >= 1000 ? `${Math.round(stats.panier_moyen / 1000)}k` : fmt(stats.panier_moyen)} change="par commande" pos={true} color="#FF9500" spark={stats.ca_week} />
+
+      {/* Métriques mois */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <MetricCard
+          label="CA CE MOIS"
+          value={extraStats.ca_month >= 1000000 ? `${(extraStats.ca_month / 1000000).toFixed(1)}M` : extraStats.ca_month >= 1000 ? `${Math.round(extraStats.ca_month / 1000)}k` : fmt(extraStats.ca_month)}
+          change={`${extraStats.orders_month} commandes`}
+          pos={true}
+          color="#9333EA"
+          spark={stats.ca_week}
+        />
+        <MetricCard
+          label="PANIER MOYEN"
+          value={stats.panier_moyen >= 1000 ? `${Math.round(stats.panier_moyen / 1000)}k` : fmt(stats.panier_moyen)}
+          change="par commande"
+          pos={true}
+          color="#FF9500"
+          spark={stats.ca_week}
+        />
       </div>
+
+      {/* Stats de performance */}
+      <div style={{ background: '#fff', borderRadius: 16, padding: '14px', marginBottom: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: '#0D0D0D', marginBottom: 12 }}>📈 Performance globale</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {[
+            { label: 'Total commandes', value: String(stats.orders_total), color: '#34C759', icon: '📦' },
+            { label: 'Taux livraison', value: `${extraStats.taux_livraison}%`, color: '#007AFF', icon: '🚚' },
+            { label: 'Taux annulation', value: `${extraStats.taux_annulation}%`, color: '#FF3B30', icon: '❌' },
+          ].map((item, i) => (
+            <div key={i} style={{ background: '#F8F8F8', borderRadius: 12, padding: '10px 8px', textAlign: 'center' }}>
+              <div style={{ fontSize: 16, marginBottom: 4 }}>{item.icon}</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: item.color }}>{item.value}</div>
+              <div style={{ fontSize: 9, color: '#AEAEB2', fontWeight: 700, marginTop: 2, lineHeight: 1.3 }}>{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <RevenueChart stats={stats} accent={accent} />
       <FunnelSection funnel={funnel} />
       <TopProduitsSection accent={accent} />
@@ -1071,7 +1139,18 @@ export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats>({ ca_today: 0, orders_today: 0, orders_total: 0, panier_moyen: 0, ca_week: [0,0,0,0,0,0,0], orders_week: [0,0,0,0,0,0,0] })
   const [latestOrder, setLatestOrder] = useState<Order | undefined>()
   const [funnel, setFunnel] = useState<FunnelStats>({ visitors: 0, product_views: 0, forms: 0, orders: 0, delivered: 0 })
-
+  const [extraStats, setExtraStats] = useState({
+    ca_yesterday: 0, orders_yesterday: 0,
+    ca_month: 0, orders_month: 0,
+    cancelled: 0, new_orders: 0,
+    taux_livraison: 0, taux_annulation: 0,
+  })
+  const [extraStats, setExtraStats] = useState({
+    ca_yesterday: 0, orders_yesterday: 0,
+    ca_month: 0, orders_month: 0,
+    cancelled: 0, new_orders: 0,
+    taux_livraison: 0, taux_annulation: 0,
+  })
   useEffect(() => {
     supabase.from('settings').select('key, value').then(({ data }) => {
       const c = (data || []).find((r: any) => r.key === 'primary_color')
@@ -1081,31 +1160,97 @@ export default function AdminPage() {
     })
     const loadStats = async () => {
       const today = new Date().toISOString().slice(0, 10)
-      const { data: allOrders } = await supabase.from('orders').select('total_price, created_at, status').eq('is_test', false).order('created_at', { ascending: false })
-      const { data: latest } = await supabase.from('orders').select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, product:product_id(name)').eq('is_test', false).order('created_at', { ascending: false }).limit(1)
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+
+      // Toutes les commandes réelles
+      const { data: allOrders } = await supabase
+        .from('orders')
+        .select('total_price, created_at, status')
+        .eq('is_test', false)
+        .order('created_at', { ascending: false })
+
+      const { data: latest } = await supabase
+        .from('orders')
+        .select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, product:product_id(name)')
+        .eq('is_test', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
       if (latest?.[0]) setLatestOrder(latest[0] as unknown as Order)
+
       const rows = allOrders || []
+
+      // Aujourd'hui
       const todayRows = rows.filter((o: any) => o.created_at?.startsWith(today))
       const ca_today = todayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
       const orders_today = todayRows.length
-      const orders_total = rows.length
-      const panier_moyen = orders_total > 0 ? rows.reduce((a: number, o: any) => a + (o.total_price || 0), 0) / orders_total : 0
+
+      // Hier
+      const yesterdayRows = rows.filter((o: any) => o.created_at?.startsWith(yesterday))
+      const ca_yesterday = yesterdayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
+      const orders_yesterday = yesterdayRows.length
+
+      // Ce mois
+      const monthRows = rows.filter((o: any) => o.created_at >= monthStart)
+      const ca_month = monthRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
+      const orders_month = monthRows.length
+
+      // Total
+      const orders_total = rows.filter((o: any) => o.status !== 'annule').length
+      const panier_moyen = orders_total > 0
+        ? rows.filter((o: any) => o.status !== 'annule').reduce((a: number, o: any) => a + (o.total_price || 0), 0) / orders_total
+        : 0
+
+      // Graphique 7 jours
       const ca_week: number[] = [], orders_week: number[] = []
       for (let i = 6; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i)
         const ds = d.toISOString().slice(0, 10)
-        const dayRows = rows.filter((o: any) => o.created_at?.startsWith(ds))
+        const dayRows = rows.filter((o: any) => o.created_at?.startsWith(ds) && o.status !== 'annule')
         ca_week.push(dayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0))
         orders_week.push(dayRows.length)
       }
+
       setStats({ ca_today, orders_today, orders_total, panier_moyen, ca_week, orders_week })
-      const formCount = rows.length
-      const orderCount = rows.filter((o: any) => ['confirme','livre','annule'].includes(o.status)).length
+
+      // Entonnoir avec vraies données Supabase
+      const formCount = rows.filter((o: any) => o.status !== 'annule').length
+      const orderCount = rows.filter((o: any) => ['confirme', 'livre'].includes(o.status)).length
       const deliveredCount = rows.filter((o: any) => o.status === 'livre').length
-      const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true)
-      const productViews = (productCount || 0) * 18
-      const estimatedVisitors = Math.round(productViews * 1.65)
-      setFunnel({ visitors: estimatedVisitors, product_views: productViews, forms: formCount, orders: orderCount, delivered: deliveredCount })
+      const cancelledCount = rows.filter((o: any) => o.status === 'annule').length
+      const newCount = rows.filter((o: any) => o.status === 'nouveau').length
+
+      // Produits publiés pour estimer les vues
+      const { count: productCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_published', true)
+
+      // Visiteurs estimés via GA4 — pour l'instant on garde une estimation réaliste
+      // Quand GA4 API sera connectée ce sera remplacé par les vraies données
+      const estimatedVisitors = Math.max(formCount * 8, (productCount || 0) * 12)
+      const estimatedProductViews = Math.max(formCount * 4, (productCount || 0) * 6)
+
+      setFunnel({
+        visitors: estimatedVisitors,
+        product_views: estimatedProductViews,
+        forms: formCount,
+        orders: orderCount,
+        delivered: deliveredCount
+      })
+
+      // Nouvelles stats supplémentaires
+      setExtraStats({
+        ca_yesterday,
+        orders_yesterday,
+        ca_month,
+        orders_month,
+        cancelled: cancelledCount,
+        new_orders: newCount,
+        taux_livraison: formCount > 0 ? Math.round((deliveredCount / formCount) * 100) : 0,
+        taux_annulation: formCount > 0 ? Math.round((cancelledCount / formCount) * 100) : 0,
+      })
     }
     loadStats()
   }, [])
@@ -1141,7 +1286,7 @@ export default function AdminPage() {
 
         {/* Contenu */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 4px' }}>
-          {tab === 'overview' && <OverviewTab stats={stats} latestOrder={latestOrder} accent={accent} funnel={funnel} />}
+          {tab === 'overview' && <OverviewTab stats={stats} extraStats={extraStats} latestOrder={latestOrder} accent={accent} funnel={funnel} />}
           {tab === 'products' && <ProductsTab accent={accent} />}
           {tab === 'orders'   && <OrdersTab accent={accent} />}
           {tab === 'auto'     && <AutoTab accent={accent} />}
