@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { compressProductImage, compressThumb } from '@/lib/compressImage'
 
 interface Category { id: string; name: string; slug: string }
 interface Argument { icon: string; text: string }
@@ -91,12 +92,12 @@ export default function NouveauProduit() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return
     const newFiles = Array.from(e.target.files).slice(0, 6 - images.length)
-    const imageCompression = (await import('browser-image-compression')).default
-    const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true }
-    const compressed: File[] = [], previews: string[] = []
+    const compressed: File[] = []
+    const previews: string[] = []
     for (const file of newFiles) {
-      try { const c = await imageCompression(file, options); compressed.push(c); previews.push(URL.createObjectURL(c)) }
-      catch { compressed.push(file); previews.push(URL.createObjectURL(file)) }
+      const c = await compressProductImage(file)
+      compressed.push(c)
+      previews.push(URL.createObjectURL(c))
     }
     setImages([...images, ...compressed])
     setImagePreviews([...imagePreviews, ...previews])
@@ -105,9 +106,9 @@ export default function NouveauProduit() {
   const uploadSectionImage = async (file: File, idx: number) => {
     setUploadingSecIdx(idx)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `sections/${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('colioo-assets').upload(path, file, { upsert: true })
+      const compressed = await compressProductImage(file)
+      const path = `sections/${Date.now()}.webp`
+      const { error } = await supabase.storage.from('colioo-assets').upload(path, compressed, { upsert: true })
       if (error) { alert('Erreur upload: ' + error.message); return }
       const { data } = supabase.storage.from('colioo-assets').getPublicUrl(path)
       const a = [...persuasionSections]; a[idx].image_url = data.publicUrl; setPersuasionSections(a)
@@ -117,9 +118,9 @@ export default function NouveauProduit() {
   const uploadUpsellImage = async (file: File, idx: number) => {
     setUploadingUpsellIdx(idx)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `upsells/${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('colioo-assets').upload(path, file, { upsert: true })
+      const compressed = await compressThumb(file)
+      const path = `upsells/${Date.now()}.webp`
+      const { error } = await supabase.storage.from('colioo-assets').upload(path, compressed, { upsert: true })
       if (error) { alert('Erreur upload: ' + error.message); return }
       const { data } = supabase.storage.from('colioo-assets').getPublicUrl(path)
       const a = [...upsellItems]; a[idx].image_url = data.publicUrl; setUpsellItems(a)
@@ -284,7 +285,6 @@ export default function NouveauProduit() {
                 </div>
               </div>
 
-              {/* Boutons save */}
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => saveProduct(false)} disabled={saving} style={{ flex: 1, height: 46, borderRadius: 14, background: '#F2F2F7', border: 'none', color: '#6B6B6B', fontSize: 14, fontWeight: 800, cursor: 'pointer', opacity: saving ? .7 : 1 }}>
                   {saving ? 'Enregistrement…' : '💾 Brouillon'}
@@ -301,11 +301,14 @@ export default function NouveauProduit() {
             <div>
               <div style={cardStyle}>
                 <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid #F2F2F7' }}>📸 Photos ({images.length}/6)</div>
+                <div style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 12, background: '#F0FFF4', borderRadius: 10, padding: '8px 12px', border: '1px solid #BBF7D0' }}>
+                  ✅ Les images sont automatiquement compressées en WebP avant upload
+                </div>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
                 <div onClick={() => fileInputRef.current?.click()} style={{ border: '2px dashed #E5E5EA', borderRadius: 14, padding: '24px 16px', textAlign: 'center', cursor: 'pointer' }}>
                   <div style={{ fontSize: 36, marginBottom: 8 }}>📸</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#6B6B6B' }}>Ajouter des photos</div>
-                  <div style={{ fontSize: 12, color: '#AEAEB2', marginTop: 4 }}>{images.length}/6 photos</div>
+                  <div style={{ fontSize: 12, color: '#AEAEB2', marginTop: 4 }}>{images.length}/6 photos · Compression auto WebP</div>
                 </div>
 
                 {imagePreviews.length > 0 && (
@@ -574,7 +577,7 @@ export default function NouveauProduit() {
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input type="file" accept="image/*" id={`img-sec-${i}`} style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (file) await uploadSectionImage(file, i) }} />
                         <button onClick={() => document.getElementById(`img-sec-${i}`)?.click()} disabled={uploadingSecIdx === i} style={{ height: 40, padding: '0 14px', borderRadius: 10, border: `1.5px solid ${accent}44`, background: accent + '10', color: accent, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                          {uploadingSecIdx === i ? '⏳ Upload…' : '📁 Uploader'}
+                          {uploadingSecIdx === i ? '⏳ Compression…' : '📁 Uploader'}
                         </button>
                         <input style={{ ...inputStyle, flex: 1, height: 40 }} value={sec.image_url} onChange={e => { const a = [...persuasionSections]; a[i].image_url = e.target.value; setPersuasionSections(a) }} placeholder="ou URL https://..." />
                       </div>
@@ -632,7 +635,7 @@ export default function NouveauProduit() {
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input type="file" accept="image/*" id={`upsell-img-${i}`} style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (file) await uploadUpsellImage(file, i) }} />
                         <button onClick={() => document.getElementById(`upsell-img-${i}`)?.click()} disabled={uploadingUpsellIdx === i} style={{ height: 40, padding: '0 14px', borderRadius: 10, border: `1.5px solid ${accent}44`, background: accent + '10', color: accent, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                          {uploadingUpsellIdx === i ? '⏳ Upload…' : '📁 Image'}
+                          {uploadingUpsellIdx === i ? '⏳ Compression…' : '📁 Image'}
                         </button>
                         <input style={{ ...inputStyle, flex: 1, height: 40 }} value={item.image_url || ''} onChange={e => { const a = [...upsellItems]; a[i].image_url = e.target.value; setUpsellItems(a) }} placeholder="ou URL https://..." />
                       </div>

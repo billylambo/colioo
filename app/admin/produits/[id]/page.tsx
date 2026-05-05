@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { compressProductImage, compressThumb, compressLogo } from '@/lib/compressImage'
 
 interface Argument { icon: string; text: string }
 interface Spec { key: string; value: string }
@@ -150,13 +151,8 @@ export default function AdminProductPage() {
         logo_url: logoUrl || null,
       }).eq('id', id)
 
-      // Si on vient de désactiver le mode test → archiver les commandes comme prospects
       if (wasTestMode && !isTestMode) {
-        await supabase
-          .from('orders')
-          .update({ is_test: true })
-          .eq('product_id', id)
-          .eq('status', 'nouveau')
+        await supabase.from('orders').update({ is_test: true }).eq('product_id', id).eq('status', 'nouveau')
         setWasTestMode(false)
         showToast('🧪 Commandes archivées dans Prospects !')
       }
@@ -192,9 +188,9 @@ export default function AdminProductPage() {
   const uploadLogo = async (file: File) => {
     setUploadingLogo(true)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `logos/${id}-${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('colioo-assets').upload(path, file, { upsert: true })
+      const compressed = await compressLogo(file)
+      const path = `logos/${id}-${Date.now()}.webp`
+      const { error } = await supabase.storage.from('colioo-assets').upload(path, compressed, { upsert: true })
       if (error) { alert('Erreur upload logo: ' + error.message); return }
       const { data } = supabase.storage.from('colioo-assets').getPublicUrl(path)
       setLogoUrl(data.publicUrl)
@@ -204,9 +200,9 @@ export default function AdminProductPage() {
   const uploadSectionImage = async (file: File, idx: number) => {
     setUploadingIdx(idx)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `sections/${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('colioo-assets').upload(path, file, { upsert: true })
+      const compressed = await compressProductImage(file)
+      const path = `sections/${Date.now()}.webp`
+      const { error } = await supabase.storage.from('colioo-assets').upload(path, compressed, { upsert: true })
       if (error) { alert('Erreur upload: ' + error.message); return }
       const { data } = supabase.storage.from('colioo-assets').getPublicUrl(path)
       const a = [...persuasionSections]; a[idx].image_url = data.publicUrl; setPersuasionSections(a)
@@ -216,9 +212,9 @@ export default function AdminProductPage() {
   const uploadUpsellImage = async (file: File, idx: number) => {
     setUploadingUpsellIdx(idx)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `upsells/${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('colioo-assets').upload(path, file, { upsert: true })
+      const compressed = await compressThumb(file)
+      const path = `upsells/${Date.now()}.webp`
+      const { error } = await supabase.storage.from('colioo-assets').upload(path, compressed, { upsert: true })
       if (error) { alert('Erreur upload: ' + error.message); return }
       const { data } = supabase.storage.from('colioo-assets').getPublicUrl(path)
       const a = [...upsellItems]; a[idx].image_url = data.publicUrl; setUpsellItems(a)
@@ -229,9 +225,9 @@ export default function AdminProductPage() {
     const key = `${idx}-${type}`
     setUploadingReviewPhoto(key)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `reviews/${Date.now()}-${type}.${ext}`
-      const { error } = await supabase.storage.from('colioo-assets').upload(path, file, { upsert: true })
+      const compressed = await compressThumb(file)
+      const path = `reviews/${Date.now()}-${type}.webp`
+      const { error } = await supabase.storage.from('colioo-assets').upload(path, compressed, { upsert: true })
       if (error) { alert('Erreur upload: ' + error.message); return }
       const { data } = supabase.storage.from('colioo-assets').getPublicUrl(path)
       const a = [...reviews]
@@ -335,7 +331,6 @@ export default function AdminProductPage() {
                 <div style={{ fontSize: 11, color: '#AEAEB2', marginTop: 4 }}>Entre le numéro seul (ex: 2250700000000) ou un lien wa.me complet</div>
               </Field>
 
-              {/* Logo produit */}
               <Field label="🏷️ Logo produit (affiché au-dessus du carousel)">
                 {logoUrl && (
                   <div style={{ position: 'relative', marginBottom: 10, display: 'inline-block' }}>
@@ -348,7 +343,7 @@ export default function AdminProductPage() {
                     onChange={async e => { const file = e.target.files?.[0]; if (file) await uploadLogo(file) }} />
                   <button onClick={() => document.getElementById('logo-upload')?.click()} disabled={uploadingLogo}
                     style={{ height: 38, padding: '0 14px', borderRadius: 10, background: uploadingLogo ? '#F2F2F7' : accent + '15', border: `1.5px solid ${accent}44`, color: uploadingLogo ? '#AEAEB2' : accent, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {uploadingLogo ? '⏳ Upload…' : '📁 Uploader le logo'}
+                    {uploadingLogo ? '⏳ Compression…' : '📁 Uploader le logo'}
                   </button>
                   <span style={{ fontSize: 12, color: '#AEAEB2' }}>ou URL :</span>
                   <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
@@ -366,7 +361,6 @@ export default function AdminProductPage() {
                 </div>
               </Field>
 
-              {/* Toggle Publié */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                 <button onClick={() => setIsPublished(!isPublished)} style={{ width: 44, height: 24, borderRadius: 12, background: isPublished ? accent : '#E5E5EA', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s' }}>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, left: isPublished ? 23 : 3, transition: 'left .2s', boxShadow: '0 1px 4px rgba(0,0,0,.2)' }} />
@@ -374,7 +368,6 @@ export default function AdminProductPage() {
                 <span style={{ fontSize: 13, fontWeight: 700, color: isPublished ? accent : '#6B6B6B' }}>{isPublished ? 'Publié' : 'Brouillon'}</span>
               </div>
 
-              {/* ── Toggle Mode Test ── */}
               <div style={{ marginTop: 14, padding: '14px', background: isTestMode ? '#FFF9E6' : '#F8F8F8', borderRadius: 14, border: `1.5px solid ${isTestMode ? '#FDE68A' : '#E5E5EA'}`, transition: 'all .3s' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                   <button onClick={() => setIsTestMode(!isTestMode)} style={{ width: 44, height: 24, borderRadius: 12, background: isTestMode ? '#FF9500' : '#E5E5EA', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s', flexShrink: 0, marginTop: 2 }}>
@@ -391,13 +384,11 @@ export default function AdminProductPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Avertissement désactivation */}
                 {wasTestMode && !isTestMode && (
                   <div style={{ marginTop: 10, padding: '10px 12px', background: '#FFF0F0', borderRadius: 10, border: '1px solid #FFCDD2' }}>
                     <div style={{ fontSize: 12, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>⚠️ Mode test désactivé</div>
                     <div style={{ fontSize: 11, color: '#6B6B6B', lineHeight: 1.5 }}>
-                      En enregistrant, toutes les commandes <strong>"nouveau"</strong> de ce produit seront archivées dans <strong>Prospects</strong>. Tu pourras les relancer quand le stock sera disponible.
+                      En enregistrant, toutes les commandes <strong>"nouveau"</strong> de ce produit seront archivées dans <strong>Prospects</strong>.
                     </div>
                   </div>
                 )}
@@ -564,7 +555,7 @@ export default function AdminProductPage() {
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                         <input type="file" accept="image/*" id={`img-sec-${i}`} style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (file) await uploadSectionImage(file, i) }} />
                         <button onClick={() => document.getElementById(`img-sec-${i}`)?.click()} disabled={uploadingIdx === i} style={{ height: 38, padding: '0 14px', borderRadius: 10, background: uploadingIdx === i ? '#F2F2F7' : accent + '15', border: `1.5px solid ${accent}44`, color: uploadingIdx === i ? '#AEAEB2' : accent, fontSize: 13, fontWeight: 700, cursor: uploadingIdx === i ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {uploadingIdx === i ? '⏳ Upload…' : '📁 Uploader'}
+                          {uploadingIdx === i ? '⏳ Compression…' : '📁 Uploader'}
                         </button>
                         <span style={{ fontSize: 12, color: '#AEAEB2' }}>ou URL :</span>
                         <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} value={sec.image_url} onChange={e => { const a = [...persuasionSections]; a[i].image_url = e.target.value; setPersuasionSections(a) }} placeholder="https://..." />
@@ -641,7 +632,7 @@ export default function AdminProductPage() {
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                         <input type="file" accept="image/*" id={`upsell-img-${i}`} style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (file) await uploadUpsellImage(file, i) }} />
                         <button onClick={() => document.getElementById(`upsell-img-${i}`)?.click()} disabled={uploadingUpsellIdx === i} style={{ height: 36, padding: '0 12px', borderRadius: 10, background: uploadingUpsellIdx === i ? '#F2F2F7' : accent + '15', border: `1.5px solid ${accent}44`, color: uploadingUpsellIdx === i ? '#AEAEB2' : accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          {uploadingUpsellIdx === i ? '⏳ Upload…' : '📁 Uploader'}
+                          {uploadingUpsellIdx === i ? '⏳ Compression…' : '📁 Uploader'}
                         </button>
                         <span style={{ fontSize: 12, color: '#AEAEB2' }}>ou URL :</span>
                         <input style={{ ...inputStyle, flex: 1, minWidth: 120 }} value={item.image_url || ''} onChange={e => { const a = [...upsellItems]; a[i].image_url = e.target.value; setUpsellItems(a) }} placeholder="https://..." />

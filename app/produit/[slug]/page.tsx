@@ -1,9 +1,33 @@
-'use client'
-
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+// SUPPRIMER 'use client' en haut
 import { supabase } from '@/lib/supabase'
 
+interface PageProps {
+  params: Promise<{ slug: string }>
+}
+
+// Composant serveur qui pre-fetch les données
+export default async function ProductPageWrapper({ params }: PageProps) {
+  const { slug } = await params
+
+  const [{ data: product }, { data: rawSettings }] = await Promise.all([
+    supabase
+      .from('products')
+      .select('*, is_test_mode, images:product_images(url, position, is_cover), sections:product_sections(*)')
+      .eq('slug', slug)
+      .single(),
+    supabase.from('settings').select('key, value')
+  ])
+
+  const settings: Record<string, string> = {}
+  for (const row of (rawSettings || []) as { key: string; value: unknown }[]) {
+    const raw = row.value
+    if (typeof raw === 'string') settings[row.key] = raw.replace(/^"|"$/g, '')
+    else if (typeof raw === 'object' && raw !== null) settings[row.key] = JSON.stringify(raw)
+    else settings[row.key] = String(raw ?? '')
+  }
+
+  return <ProductPageClient initialProduct={product} initialSettings={settings} />
+}
 interface Product {
   id: string
   name: string
