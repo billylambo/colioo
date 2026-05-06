@@ -49,15 +49,14 @@ export default function Categories() {
     showToast(is_active ? '👁️ Catégorie désactivée' : '✅ Catégorie activée')
   }
 
-  const deleteCategory = async (id: string) => {
-    if (!confirm('Supprimer cette catégorie ?')) return
-    const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      setCategories(prev => prev.filter(c => c.id !== id))
-      showToast('🗑️ Catégorie supprimée')
-    } else {
-      showToast('❌ Erreur lors de la suppression')
+  const doDelete = async (id: string) => {
+    const res = await fetch(`/api/commander/categories/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      showToast('❌ Erreur suppression catégorie')
+      return
     }
+    setCategories(prev => prev.filter(c => c.id !== id))
+    showToast('🗑️ Catégorie supprimée')
   }
 
   return (
@@ -125,7 +124,7 @@ export default function Categories() {
                 <button onClick={() => toggleActive(cat.id, cat.is_active)} style={{ height: 28, padding: '0 12px', borderRadius: 20, border: 'none', background: cat.is_active ? '#ECFDF5' : '#F2F2F7', color: cat.is_active ? '#059669' : '#AEAEB2', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                   {cat.is_active ? '✓ Active' : 'Inactive'}
                 </button>
-                <button onClick={() => deleteCategory(cat.id)} style={{ width: 32, height: 32, borderRadius: '50%', background: '#FFF0F0', border: 'none', color: '#FF3B30', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <button onClick={() => doDelete(cat.id)} style={{ width: 32, height: 32, borderRadius: '50%', background: '#FFF0F0', border: 'none', color: '#FF3B30', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
                 </button>
               </div>

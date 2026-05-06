@@ -1145,12 +1145,7 @@ export default function AdminPage() {
     cancelled: 0, new_orders: 0,
     taux_livraison: 0, taux_annulation: 0,
   })
-  const [extraStats, setExtraStats] = useState({
-    ca_yesterday: 0, orders_yesterday: 0,
-    ca_month: 0, orders_month: 0,
-    cancelled: 0, new_orders: 0,
-    taux_livraison: 0, taux_annulation: 0,
-  })
+  
   useEffect(() => {
     supabase.from('settings').select('key, value').then(({ data }) => {
       const c = (data || []).find((r: any) => r.key === 'primary_color')
