@@ -128,9 +128,13 @@ export default function AccueilAdmin() {
     setUploadingSlide(false)
   }
 
-  const removeSlide = (index: number) => {
+  const removeSlide = async (index: number) => {
     if (!editingSection) return
-    updateContent('slides', editingSection.content.slides.filter((_: any, i: number) => i !== index))
+    const newSlides = editingSection.content.slides.filter((_: any, i: number) => i !== index)
+    const newSection = { ...editingSection, content: { ...editingSection.content, slides: newSlides } }
+    setEditingSection(newSection)
+    await supabase.from('home_sections').update({ content: newSection.content }).eq('id', editingSection.id)
+    showToast('🗑️ Slide supprimé !')
   }
 
   const renderEditor = (section: HomeSection) => {
