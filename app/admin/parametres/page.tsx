@@ -50,7 +50,6 @@ const inputStyle: React.CSSProperties = {
   background: '#FAFAFA', boxSizing: 'border-box'
 }
 
-// ─── Upload Button ────────────────────────────────────────────────────────────
 function UploadButton({ label, accept, folder, currentUrl, onUploaded, accent }: {
   label: string; accept: string; folder: string; currentUrl: string
   onUploaded: (url: string) => void; accent: string
@@ -74,12 +73,16 @@ function UploadButton({ label, accept, folder, currentUrl, onUploaded, accent }:
       <input ref={ref} type="file" accept={accept} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) upload(f) }} />
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         {currentUrl && (
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
             {accept.includes('video') ? (
               <video src={currentUrl} style={{ height: 60, borderRadius: 8, border: '1px solid #E5E5EA', objectFit: 'cover' }} />
             ) : (
               <img src={currentUrl} alt="" style={{ height: 60, borderRadius: 8, border: '1px solid #E5E5EA', objectFit: 'cover', maxWidth: 120 }} />
             )}
+            <button
+              onClick={() => onUploaded('')}
+              style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#FF3B30', color: '#fff', border: '2px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, lineHeight: 1 }}
+            >✕</button>
           </div>
         )}
         <button onClick={() => ref.current?.click()} disabled={uploading} style={{ height: 42, padding: '0 16px', borderRadius: 10, background: uploading ? '#F2F2F7' : accent + '15', border: `1.5px solid ${accent}44`, color: accent, fontSize: 13, fontWeight: 700, cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -152,7 +155,6 @@ export default function ParametresPage() {
 
       <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 40 }}>
 
-        {/* Header */}
         <div style={{ background: '#fff', borderBottom: '1px solid #E5E5EA', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 40 }}>
           <button onClick={() => router.push('/admin')} style={{ width: 34, height: 34, borderRadius: '50%', background: '#F2F2F7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth="2.5" strokeLinecap="round"><polyline points="15,18 9,12 15,6" /></svg>
@@ -166,7 +168,6 @@ export default function ParametresPage() {
           </button>
         </div>
 
-        {/* Preview bar */}
         <div style={{ background: s.dark_color || '#1A1A2E', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
           {s.logo_url
             ? <img src={s.logo_url} alt="logo" style={{ height: 28, objectFit: 'contain' }} />
@@ -176,7 +177,6 @@ export default function ParametresPage() {
           <div style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: '50%', background: accent }} />
         </div>
 
-        {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, padding: '12px 12px 0' }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, height: 36, borderRadius: 10, border: 'none', background: tab === t.id ? accent : '#fff', color: tab === t.id ? '#fff' : '#6B6B6B', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>
@@ -187,7 +187,6 @@ export default function ParametresPage() {
 
         <div style={{ padding: '12px 12px 0' }}>
 
-          {/* ── IDENTITÉ ── */}
           {tab === 'identite' && (
             <>
               <Section title="🏷️ Identité de la marque">
@@ -210,7 +209,6 @@ export default function ParametresPage() {
             </>
           )}
 
-          {/* ── HERO ── */}
           {tab === 'hero' && (
             <>
               <Section title="🖼️ Type de fond du Hero">
@@ -240,9 +238,11 @@ export default function ParametresPage() {
                   <Field label="Upload une image">
                     <UploadButton label="Uploader l'image" accept="image/*" folder="hero" currentUrl={s.hero_bg_url || ''} onUploaded={url => set('hero_bg_url', url)} accent={accent} />
                   </Field>
-                  <Field label={`Opacité du filtre sombre — ${s.hero_overlay || '0.5'}`}>
-                    <input type="range" min="0" max="1" step="0.05" value={s.hero_overlay || '0.5'} onChange={e => set('hero_overlay', e.target.value)} style={{ width: '100%' }} />
-                  </Field>
+                  {s.hero_bg_url && (
+                    <Field label={`Opacité du filtre sombre — ${s.hero_overlay || '0.5'}`}>
+                      <input type="range" min="0" max="1" step="0.05" value={s.hero_overlay || '0.5'} onChange={e => set('hero_overlay', e.target.value)} style={{ width: '100%' }} />
+                    </Field>
+                  )}
                 </Section>
               )}
 
@@ -251,9 +251,11 @@ export default function ParametresPage() {
                   <Field label="Upload une vidéo (MP4 recommandé)">
                     <UploadButton label="Uploader la vidéo" accept="video/*" folder="hero" currentUrl={s.hero_bg_url || ''} onUploaded={url => set('hero_bg_url', url)} accent={accent} />
                   </Field>
-                  <Field label={`Opacité du filtre sombre — ${s.hero_overlay || '0.5'}`}>
-                    <input type="range" min="0" max="1" step="0.05" value={s.hero_overlay || '0.5'} onChange={e => set('hero_overlay', e.target.value)} style={{ width: '100%' }} />
-                  </Field>
+                  {s.hero_bg_url && (
+                    <Field label={`Opacité du filtre sombre — ${s.hero_overlay || '0.5'}`}>
+                      <input type="range" min="0" max="1" step="0.05" value={s.hero_overlay || '0.5'} onChange={e => set('hero_overlay', e.target.value)} style={{ width: '100%' }} />
+                    </Field>
+                  )}
                 </Section>
               )}
 
@@ -262,9 +264,11 @@ export default function ParametresPage() {
                   <Field label="Upload un GIF">
                     <UploadButton label="Uploader le GIF" accept="image/gif" folder="hero" currentUrl={s.hero_bg_url || ''} onUploaded={url => set('hero_bg_url', url)} accent={accent} />
                   </Field>
-                  <Field label={`Opacité du filtre sombre — ${s.hero_overlay || '0.5'}`}>
-                    <input type="range" min="0" max="1" step="0.05" value={s.hero_overlay || '0.5'} onChange={e => set('hero_overlay', e.target.value)} style={{ width: '100%' }} />
-                  </Field>
+                  {s.hero_bg_url && (
+                    <Field label={`Opacité du filtre sombre — ${s.hero_overlay || '0.5'}`}>
+                      <input type="range" min="0" max="1" step="0.05" value={s.hero_overlay || '0.5'} onChange={e => set('hero_overlay', e.target.value)} style={{ width: '100%' }} />
+                    </Field>
+                  )}
                 </Section>
               )}
 
@@ -291,7 +295,6 @@ export default function ParametresPage() {
             </>
           )}
 
-          {/* ── DESIGN ── */}
           {tab === 'design' && (
             <>
               <Section title="🎨 Couleur principale">
