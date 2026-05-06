@@ -1,5 +1,14 @@
 import { supabase } from '@/lib/supabase'
 import ProductPageClient from './ProductPageClient'
+export const revalidate = 30
+
+export async function generateStaticParams() {
+  const { data } = await supabase
+    .from('products')
+    .select('slug')
+    .eq('is_published', true)
+  return (data || []).map(p => ({ slug: p.slug }))
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>

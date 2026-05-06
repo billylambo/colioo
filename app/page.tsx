@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import HomePageClient from './_components/HomePageClient'
-
+export const revalidate = 60 // Cache pendant 60 secondes
 interface Product {
   id: string
   name: string
