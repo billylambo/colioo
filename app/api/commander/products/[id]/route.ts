@@ -12,36 +12,25 @@ export async function DELETE(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Ordre important : supprimer d'abord ce qui référence le produit
-  // puis le produit lui-même
-  const ordersRes = await supabaseAdmin.from('orders').delete().eq('product_id', id)
-  if (ordersRes.error) {
-    console.error('Erreur suppression orders:', ordersRes.error)
-    return NextResponse.json({ error: ordersRes.error }, { status: 500 })
-  }
+  // 1. Supprimer les orders (FK vers products)
+  const { error: e1 } = await supabaseAdmin.from('orders').delete().eq('product_id', id)
+  if (e1) return NextResponse.json({ error: e1.message }, { status: 500 })
 
-  const eventsRes = await supabaseAdmin.from('events').delete().eq('product_id', id)
-  if (eventsRes.error) {
-    console.error('Erreur suppression events:', eventsRes.error)
-  }
+  // 2. Supprimer les events (FK vers products)
+  const { error: e2 } = await supabaseAdmin.from('events').delete().eq('product_id', id)
+  if (e2) return NextResponse.json({ error: e2.message }, { status: 500 })
 
-  const imagesRes = await supabaseAdmin.from('product_images').delete().eq('product_id', id)
-  if (imagesRes.error) {
-    console.error('Erreur suppression images:', imagesRes.error)
-    return NextResponse.json({ error: imagesRes.error }, { status: 500 })
-  }
+  // 3. Supprimer les images
+  const { error: e3 } = await supabaseAdmin.from('product_images').delete().eq('product_id', id)
+  if (e3) return NextResponse.json({ error: e3.message }, { status: 500 })
 
-  const sectionsRes = await supabaseAdmin.from('product_sections').delete().eq('product_id', id)
-  if (sectionsRes.error) {
-    console.error('Erreur suppression sections:', sectionsRes.error)
-    return NextResponse.json({ error: sectionsRes.error }, { status: 500 })
-  }
+  // 4. Supprimer les sections
+  const { error: e4 } = await supabaseAdmin.from('product_sections').delete().eq('product_id', id)
+  if (e4) return NextResponse.json({ error: e4.message }, { status: 500 })
 
-  const productRes = await supabaseAdmin.from('products').delete().eq('id', id)
-  if (productRes.error) {
-    console.error('Erreur suppression produit:', productRes.error)
-    return NextResponse.json({ error: productRes.error }, { status: 500 })
-  }
+  // 5. Supprimer le produit
+  const { error: e5 } = await supabaseAdmin.from('products').delete().eq('id', id)
+  if (e5) return NextResponse.json({ error: e5.message }, { status: 500 })
 
   return NextResponse.json({ success: true })
 }
