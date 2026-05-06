@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useState, useEffect, useCallback, useTransition } from 'react'
 
 type OrderStatus = 'nouveau' | 'confirme' | 'livre' | 'annule'
 
@@ -278,16 +278,11 @@ function OverviewTab({ stats, extraStats, latestOrder, accent, funnel }: {
   accent: string
   funnel: FunnelStats
 }) {
-  const caVsHier = extraStats.ca_yesterday > 0
-    ? Math.round(((stats.ca_today - extraStats.ca_yesterday) / extraStats.ca_yesterday) * 100)
-    : 0
-  const ordersVsHier = extraStats.orders_yesterday > 0
-    ? Math.round(((stats.orders_today - extraStats.orders_yesterday) / extraStats.orders_yesterday) * 100)
-    : 0
+  const caVsHier = extraStats.ca_yesterday > 0 ? Math.round(((stats.ca_today - extraStats.ca_yesterday) / extraStats.ca_yesterday) * 100) : 0
+  const ordersVsHier = extraStats.orders_yesterday > 0 ? Math.round(((stats.orders_today - extraStats.orders_yesterday) / extraStats.orders_yesterday) * 100) : 0
 
   return (
     <div>
-      {/* Alerte nouvelle commande */}
       {latestOrder && extraStats.new_orders > 0 && (
         <div style={{ background: `linear-gradient(135deg,${accent}15,${accent}08)`, border: `1px solid ${accent}30`, borderRadius: 14, padding: '12px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent, animation: 'pulse 2s infinite' }} />
@@ -298,48 +293,14 @@ function OverviewTab({ stats, extraStats, latestOrder, accent, funnel }: {
           <div style={{ fontSize: 11, fontWeight: 800, color: accent, background: accent + '15', borderRadius: 8, padding: '3px 8px' }}>⚡ NOUVEAU</div>
         </div>
       )}
-
-      {/* Métriques aujourd'hui */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <MetricCard
-          label="CA AUJOURD'HUI"
-          value={stats.ca_today >= 1000 ? `${Math.round(stats.ca_today / 1000)}k` : fmt(stats.ca_today)}
-          change={caVsHier === 0 ? 'vs hier' : `${caVsHier > 0 ? '+' : ''}${caVsHier}% vs hier`}
-          pos={caVsHier >= 0}
-          color={accent}
-          spark={stats.ca_week}
-        />
-        <MetricCard
-          label="COMMANDES"
-          value={String(stats.orders_today)}
-          change={ordersVsHier === 0 ? 'aujourd\'hui' : `${ordersVsHier > 0 ? '+' : ''}${ordersVsHier}% vs hier`}
-          pos={ordersVsHier >= 0}
-          color="#007AFF"
-          spark={stats.orders_week}
-        />
+        <MetricCard label="CA AUJOURD'HUI" value={stats.ca_today >= 1000 ? `${Math.round(stats.ca_today / 1000)}k` : fmt(stats.ca_today)} change={caVsHier === 0 ? 'vs hier' : `${caVsHier > 0 ? '+' : ''}${caVsHier}% vs hier`} pos={caVsHier >= 0} color={accent} spark={stats.ca_week} />
+        <MetricCard label="COMMANDES" value={String(stats.orders_today)} change={ordersVsHier === 0 ? "aujourd'hui" : `${ordersVsHier > 0 ? '+' : ''}${ordersVsHier}% vs hier`} pos={ordersVsHier >= 0} color="#007AFF" spark={stats.orders_week} />
       </div>
-
-      {/* Métriques mois */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <MetricCard
-          label="CA CE MOIS"
-          value={extraStats.ca_month >= 1000000 ? `${(extraStats.ca_month / 1000000).toFixed(1)}M` : extraStats.ca_month >= 1000 ? `${Math.round(extraStats.ca_month / 1000)}k` : fmt(extraStats.ca_month)}
-          change={`${extraStats.orders_month} commandes`}
-          pos={true}
-          color="#9333EA"
-          spark={stats.ca_week}
-        />
-        <MetricCard
-          label="PANIER MOYEN"
-          value={stats.panier_moyen >= 1000 ? `${Math.round(stats.panier_moyen / 1000)}k` : fmt(stats.panier_moyen)}
-          change="par commande"
-          pos={true}
-          color="#FF9500"
-          spark={stats.ca_week}
-        />
+        <MetricCard label="CA CE MOIS" value={extraStats.ca_month >= 1000000 ? `${(extraStats.ca_month / 1000000).toFixed(1)}M` : extraStats.ca_month >= 1000 ? `${Math.round(extraStats.ca_month / 1000)}k` : fmt(extraStats.ca_month)} change={`${extraStats.orders_month} commandes`} pos={true} color="#9333EA" spark={stats.ca_week} />
+        <MetricCard label="PANIER MOYEN" value={stats.panier_moyen >= 1000 ? `${Math.round(stats.panier_moyen / 1000)}k` : fmt(stats.panier_moyen)} change="par commande" pos={true} color="#FF9500" spark={stats.ca_week} />
       </div>
-
-      {/* Stats de performance */}
       <div style={{ background: '#fff', borderRadius: 16, padding: '14px', marginBottom: 12 }}>
         <div style={{ fontSize: 13, fontWeight: 900, color: '#0D0D0D', marginBottom: 12 }}>📈 Performance globale</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
@@ -356,7 +317,6 @@ function OverviewTab({ stats, extraStats, latestOrder, accent, funnel }: {
           ))}
         </div>
       </div>
-
       <RevenueChart stats={stats} accent={accent} />
       <FunnelSection funnel={funnel} />
       <TopProduitsSection accent={accent} />
@@ -391,31 +351,54 @@ function ProductsTab({ accent }: { accent: string }) {
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all')
   const [confirm, setConfirm] = useState<{ id: string; action: 'delete' | 'toggle'; label: string } | null>(null)
   const [toast, setToast] = useState('')
+  const [, startTransition] = useTransition()
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+
   const load = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('products').select('id, name, price, original_price, is_published, slug, badge, images:product_images(url, is_cover)').order('created_at', { ascending: false })
     setProducts((data || []) as Product[])
     setLoading(false)
   }, [])
+
   useEffect(() => { load() }, [load])
+
   const doToggle = async (p: Product) => {
     await supabase.from('products').update({ is_published: !p.is_published }).eq('id', p.id)
     setProducts(prev => prev.map(x => x.id === p.id ? { ...x, is_published: !x.is_published } : x))
     showToast(p.is_published ? '👁️ Produit masqué' : '✅ Produit visible')
   }
+
   const doDelete = async (id: string) => {
-    await fetch(`/api/commander/products/${id}`, { method: 'DELETE' })
-    setProducts(prev => prev.filter(x => x.id !== id))
-    showToast('🗑️ Produit supprimé')
+    try {
+      const res = await fetch(`/api/commander/products/${id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (!res.ok) {
+        console.error('Erreur suppression:', json)
+        showToast('❌ Erreur : ' + (json?.error?.message || json?.error || 'inconnue'))
+        return
+      }
+      setProducts(prev => prev.filter(x => x.id !== id))
+      showToast('🗑️ Produit supprimé')
+    } catch (e) {
+      console.error('Erreur fetch delete:', e)
+      showToast('❌ Erreur réseau')
+    }
   }
+
   const handleConfirm = async () => {
     if (!confirm) return
-    if (confirm.action === 'delete') await doDelete(confirm.id)
-    else { const p = products.find(x => x.id === confirm.id); if (p) await doToggle(p) }
+    const c = confirm
     setConfirm(null)
+    startTransition(async () => {
+      if (c.action === 'delete') await doDelete(c.id)
+      else { const p = products.find(x => x.id === c.id); if (p) await doToggle(p) }
+    })
   }
+
   const visible = products.filter(p => filter === 'all' ? true : filter === 'published' ? p.is_published : !p.is_published)
+
   return (
     <div>
       <Toast msg={toast} />
@@ -428,46 +411,50 @@ function ProductsTab({ accent }: { accent: string }) {
           <button key={v} onClick={() => setFilter(v)} style={{ flexShrink: 0, height: 28, padding: '0 11px', borderRadius: 8, background: filter === v ? accent : '#fff', border: 'none', color: filter === v ? '#fff' : '#6B6B6B', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
         ))}
       </div>
-      {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>Chargement…</div>
-        : visible.length === 0 ? <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}><div style={{ fontSize: 36, marginBottom: 8 }}>📦</div><div style={{ fontSize: 14, fontWeight: 700 }}>Aucun produit</div></div>
-        : visible.map(p => {
-          const cover = p.images?.find(img => img.is_cover)?.url || p.images?.[0]?.url
-          return (
-            <div key={p.id} style={{ background: '#fff', borderRadius: 16, padding: 13, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 11, opacity: p.is_published ? 1 : .6 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, overflow: 'hidden', background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {cover ? <img src={cover} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 24 }}>🛍️</span>}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>Chargement…</div>
+      ) : visible.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>Aucun produit</div>
+        </div>
+      ) : visible.map(p => {
+        const cover = p.images?.find(img => img.is_cover)?.url || p.images?.[0]?.url
+        return (
+          <div key={p.id} style={{ background: '#fff', borderRadius: 16, padding: 13, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 11, opacity: p.is_published ? 1 : .6 }}>
+            <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, overflow: 'hidden', background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {cover ? <img src={cover} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 24 }}>🛍️</span>}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                <span style={{ fontSize: 13, color: accent, fontWeight: 700 }}>{p.price.toLocaleString('fr-FR')} FCFA</span>
+                {p.original_price && <span style={{ fontSize: 11, color: '#AEAEB2', textDecoration: 'line-through' }}>{p.original_price.toLocaleString('fr-FR')}</span>}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-                  <span style={{ fontSize: 13, color: accent, fontWeight: 700 }}>{p.price.toLocaleString('fr-FR')} FCFA</span>
-                  {p.original_price && <span style={{ fontSize: 11, color: '#AEAEB2', textDecoration: 'line-through' }}>{p.original_price.toLocaleString('fr-FR')}</span>}
-                </div>
-                <div style={{ marginTop: 3 }}>
-                  <span style={{ fontSize: 10, background: p.is_published ? '#ECFDF5' : '#F2F2F7', color: p.is_published ? '#059669' : '#6B6B6B', borderRadius: 5, padding: '2px 7px', fontWeight: 700 }}>{p.is_published ? '✓ Publié' : 'Brouillon'}</span>
-                  {p.badge && <span style={{ fontSize: 10, background: accent + '18', color: accent, borderRadius: 5, padding: '2px 7px', fontWeight: 700, marginLeft: 5 }}>{p.badge}</span>}
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <button onClick={() => router.push(`/admin/produits/${p.id}`)} style={{ width: 32, height: 32, borderRadius: '50%', background: '#F2F2F7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                </button>
-                <button onClick={() => setConfirm({ id: p.id, action: 'toggle', label: `${p.is_published ? 'Masquer' : 'Publier'} "${p.name}" ?` })} style={{ width: 32, height: 32, borderRadius: '50%', background: p.is_published ? '#FFF0F3' : '#F2F2F7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={p.is_published ? accent : '#AEAEB2'} strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                </button>
-                <button onClick={() => setConfirm({ id: p.id, action: 'delete', label: `Supprimer définitivement "${p.name}" ?` })} style={{ width: 32, height: 32, borderRadius: '50%', background: '#FFF0F0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
-                </button>
+              <div style={{ marginTop: 3 }}>
+                <span style={{ fontSize: 10, background: p.is_published ? '#ECFDF5' : '#F2F2F7', color: p.is_published ? '#059669' : '#6B6B6B', borderRadius: 5, padding: '2px 7px', fontWeight: 700 }}>{p.is_published ? '✓ Publié' : 'Brouillon'}</span>
+                {p.badge && <span style={{ fontSize: 10, background: accent + '18', color: accent, borderRadius: 5, padding: '2px 7px', fontWeight: 700, marginLeft: 5 }}>{p.badge}</span>}
               </div>
             </div>
-          )
-        })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <button onClick={() => router.push(`/admin/produits/${p.id}`)} style={{ width: 32, height: 32, borderRadius: '50%', background: '#F2F2F7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+              </button>
+              <button onClick={() => startTransition(() => setConfirm({ id: p.id, action: 'toggle', label: `${p.is_published ? 'Masquer' : 'Publier'} "${p.name}" ?` }))} style={{ width: 32, height: 32, borderRadius: '50%', background: p.is_published ? '#FFF0F3' : '#F2F2F7', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={p.is_published ? accent : '#AEAEB2'} strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
+              <button onClick={() => startTransition(() => setConfirm({ id: p.id, action: 'delete', label: `Supprimer définitivement "${p.name}" ?` }))} style={{ width: 32, height: 32, borderRadius: '50%', background: '#FFF0F0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round"><polyline points="3,6 5,6 21,6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></svg>
+              </button>
+            </div>
+          </div>
+        )
+      })}
       {confirm && <ConfirmModal message={confirm.label} accent={accent} onConfirm={handleConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   )
 }
 
-// ── Templates de relance ──────────────────────────────────────────────────────
 const TEMPLATES_DEFAUT = [
   {
     id: 'douce', label: 'Confirmation commande', emoji: '✅', color: '#25D366', delai: 'Immédiat',
@@ -483,7 +470,6 @@ const TEMPLATES_DEFAUT = [
   },
 ]
 
-// ── Modal de relance ──────────────────────────────────────────────────────────
 function RelanceModal({ order, accent, onClose }: { order: Order; accent: string; onClose: () => void }) {
   const [selected, setSelected] = useState(0)
   const [customTemplates, setCustomTemplates] = useState<{ id: string; label: string; emoji: string; color: string; body: string }[]>([])
@@ -535,7 +521,6 @@ function RelanceModal({ order, accent, onClose }: { order: Order; accent: string
   )
 }
 
-// ── ProspectsTab ──────────────────────────────────────────────────────────────
 function ProspectsTab({ accent }: { accent: string }) {
   const [prospects, setProspects] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -544,11 +529,7 @@ function ProspectsTab({ accent }: { accent: string }) {
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('orders')
-        .select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, options_chosen, product:product_id(name, slug)')
-        .eq('is_test', true)
-        .order('created_at', { ascending: false })
+      const { data } = await supabase.from('orders').select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, options_chosen, product:product_id(name, slug)').eq('is_test', true).order('created_at', { ascending: false })
       setProspects((data || []) as unknown as Order[])
       setLoading(false)
     }
@@ -558,14 +539,10 @@ function ProspectsTab({ accent }: { accent: string }) {
   return (
     <div>
       {relanceOrder && <RelanceModal order={relanceOrder} accent={accent} onClose={() => setRelanceOrder(null)} />}
-
       <div style={{ background: '#FFF9E6', borderRadius: 14, padding: '14px', marginBottom: 14, border: '1px solid #FDE68A' }}>
         <div style={{ fontSize: 15, fontWeight: 900, color: '#B45309', marginBottom: 4 }}>🧪 Prospects — Commandes de test</div>
-        <div style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6 }}>
-          Ces clients ont commandé un produit en mode test. Une fois le stock disponible, relance-les !
-        </div>
+        <div style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6 }}>Ces clients ont commandé un produit en mode test. Une fois le stock disponible, relance-les !</div>
       </div>
-
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '12px', textAlign: 'center' }}>
           <div style={{ fontSize: 20, fontWeight: 900, color: '#FF9500' }}>{prospects.length}</div>
@@ -576,7 +553,6 @@ function ProspectsTab({ accent }: { accent: string }) {
           <div style={{ fontSize: 10, color: '#AEAEB2', fontWeight: 700, marginTop: 3 }}>FCFA potentiel</div>
         </div>
       </div>
-
       {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>Chargement…</div>
         : prospects.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>
@@ -610,7 +586,6 @@ function ProspectsTab({ accent }: { accent: string }) {
   )
 }
 
-// ── AutoTab ───────────────────────────────────────────────────────────────────
 function AutoTab({ accent }: { accent: string }) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -627,12 +602,7 @@ function AutoTab({ accent }: { accent: string }) {
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('orders')
-        .select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, options_chosen, product:product_id(name, slug)')
-        .or('no_wa.eq.true,status.eq.annule')
-        .eq('is_test', false)
-        .order('created_at', { ascending: false })
+      const { data } = await supabase.from('orders').select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, options_chosen, product:product_id(name, slug)').or('no_wa.eq.true,status.eq.annule').eq('is_test', false).order('created_at', { ascending: false })
       setOrders((data || []) as unknown as Order[])
       setLoading(false)
     }
@@ -680,33 +650,23 @@ function AutoTab({ accent }: { accent: string }) {
     <div>
       <Toast msg={toast} />
       {relanceOrder && <RelanceModal order={relanceOrder} accent={accent} onClose={() => setRelanceOrder(null)} />}
-
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-        {[
-          { label: 'Total', value: orders.length, color: '#007AFF' },
-          { label: 'No WA', value: orders.filter(o => o.no_wa).length, color: '#FF9500' },
-          { label: 'Annulées', value: orders.filter(o => o.status === 'annule').length, color: '#FF3B30' },
-        ].map((s, i) => (
+        {[{ label: 'Total', value: orders.length, color: '#007AFF' }, { label: 'No WA', value: orders.filter(o => o.no_wa).length, color: '#FF9500' }, { label: 'Annulées', value: orders.filter(o => o.status === 'annule').length, color: '#FF3B30' }].map((s, i) => (
           <div key={i} style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '12px', textAlign: 'center' }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.value}</div>
             <div style={{ fontSize: 10, color: '#AEAEB2', fontWeight: 700, marginTop: 3 }}>{s.label}</div>
           </div>
         ))}
       </div>
-
       <div style={{ background: '#FFF9E6', borderRadius: 14, padding: '12px 14px', marginBottom: 14, border: '1px solid #FDE68A' }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: '#B45309', marginBottom: 4 }}>💡 Comment ça marche ?</div>
-        <div style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6 }}>
-          <strong>No WA</strong> = Tu as reçu la notif Telegram mais pas le message WA. Clique "No WA" sur la commande dans l'onglet Commandes, puis relance ici.
-        </div>
+        <div style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6 }}><strong>No WA</strong> = Tu as reçu la notif Telegram mais pas le message WA. Clique "No WA" sur la commande dans l'onglet Commandes, puis relance ici.</div>
       </div>
-
       <div style={{ display: 'flex', gap: 7, marginBottom: 12 }}>
         {([['tous', 'Tous'], ['no_wa', '🔇 No WA'], ['annule', '❌ Annulées']] as const).map(([v, l]) => (
           <button key={v} onClick={() => setFilter(v)} style={{ flexShrink: 0, height: 30, padding: '0 12px', borderRadius: 8, background: filter === v ? accent : '#fff', border: 'none', color: filter === v ? '#fff' : '#6B6B6B', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
         ))}
       </div>
-
       {loading ? <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>Chargement…</div>
         : visible.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: '#AEAEB2' }}>
@@ -739,8 +699,6 @@ function AutoTab({ accent }: { accent: string }) {
             </div>
           )
         })}
-
-      {/* Templates */}
       <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginTop: 8, marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
@@ -778,8 +736,6 @@ function AutoTab({ accent }: { accent: string }) {
           </div>
         ))}
       </div>
-
-      {/* Test Telegram */}
       <div style={{ background: '#fff', borderRadius: 16, padding: '16px', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>✈️</span>
@@ -794,7 +750,6 @@ function AutoTab({ accent }: { accent: string }) {
   )
 }
 
-// ── OrdersTab ─────────────────────────────────────────────────────────────────
 function OrdersTab({ accent }: { accent: string }) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -802,18 +757,17 @@ function OrdersTab({ accent }: { accent: string }) {
   const [detail, setDetail] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<{ id: string; newStatus: OrderStatus; label: string } | null>(null)
   const [toast, setToast] = useState('')
+  const [, startTransition] = useTransition()
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('orders')
-      .select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, is_test, options_chosen, product:product_id(name)')
-      .eq('is_test', false)
-      .order('created_at', { ascending: false })
-      .limit(50)
+    const { data } = await supabase.from('orders').select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, no_wa, is_test, options_chosen, product:product_id(name)').eq('is_test', false).order('created_at', { ascending: false }).limit(50)
     setOrders((data || []) as unknown as Order[])
     setLoading(false)
   }, [])
+
   useEffect(() => { load() }, [load])
 
   const changeStatus = async (id: string, newStatus: OrderStatus) => {
@@ -892,12 +846,12 @@ function OrdersTab({ accent }: { accent: string }) {
               )}
               {o.status === 'nouveau' && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button onClick={() => setConfirm({ id: o.id, newStatus: 'confirme', label: `Confirmer la commande de ${o.customer_name} ?` })} style={{ flex: 1, height: 34, borderRadius: 10, background: '#ECFDF5', border: 'none', color: '#059669', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓ Confirmer</button>
-                  <button onClick={() => setConfirm({ id: o.id, newStatus: 'annule', label: `Annuler la commande de ${o.customer_name} ?` })} style={{ flex: 1, height: 34, borderRadius: 10, background: '#FFF0F0', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✗ Annuler</button>
+                  <button onClick={() => startTransition(() => setConfirm({ id: o.id, newStatus: 'confirme', label: `Confirmer la commande de ${o.customer_name} ?` }))} style={{ flex: 1, height: 34, borderRadius: 10, background: '#ECFDF5', border: 'none', color: '#059669', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓ Confirmer</button>
+                  <button onClick={() => startTransition(() => setConfirm({ id: o.id, newStatus: 'annule', label: `Annuler la commande de ${o.customer_name} ?` }))} style={{ flex: 1, height: 34, borderRadius: 10, background: '#FFF0F0', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✗ Annuler</button>
                 </div>
               )}
               {o.status === 'confirme' && (
-                <button onClick={() => setConfirm({ id: o.id, newStatus: 'livre', label: `Marquer livrée la commande de ${o.customer_name} ?` })} style={{ width: '100%', height: 34, borderRadius: 10, background: '#E8F4FF', border: 'none', color: '#007AFF', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginTop: 10 }}>🚚 Marquer comme livrée</button>
+                <button onClick={() => startTransition(() => setConfirm({ id: o.id, newStatus: 'livre', label: `Marquer livrée la commande de ${o.customer_name} ?` }))} style={{ width: '100%', height: 34, borderRadius: 10, background: '#E8F4FF', border: 'none', color: '#007AFF', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginTop: 10 }}>🚚 Marquer comme livrée</button>
               )}
               {(o.status === 'nouveau' || o.status === 'confirme') && (
                 <button onClick={() => toggleNoWa(o.id, o.no_wa || false)} style={{ width: '100%', height: 34, borderRadius: 10, background: o.no_wa ? '#FFF3CD' : '#F8F8F8', border: `1.5px solid ${o.no_wa ? '#FDE68A' : '#E5E5EA'}`, color: o.no_wa ? '#B45309' : '#6B6B6B', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', marginTop: 8 }}>
@@ -917,7 +871,6 @@ function OrdersTab({ accent }: { accent: string }) {
   )
 }
 
-// ── ResetSiteButton ───────────────────────────────────────────────────────────
 function ResetSiteButton({ accent }: { accent: string }) {
   const [showModal, setShowModal] = useState(false)
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -943,9 +896,7 @@ function ResetSiteButton({ accent }: { accent: string }) {
       await supabase.from('categories').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       await supabase.from('home_sections').delete().neq('id', '00000000-0000-0000-0000-000000000000')
       setStep(3)
-    } catch (e) {
-      showToast('❌ Erreur lors de la réinitialisation')
-    }
+    } catch { showToast('❌ Erreur lors de la réinitialisation') }
     setLoading(false)
   }
 
@@ -959,14 +910,9 @@ function ResetSiteButton({ accent }: { accent: string }) {
           <span style={{ fontSize: 18 }}>🗑️</span>
           <div style={{ fontSize: 15, fontWeight: 900, color: '#DC2626' }}>Réinitialiser le site</div>
         </div>
-        <div style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 12, lineHeight: 1.6 }}>
-          Supprime tous les produits, commandes, catégories, abonnés et sections. <strong>Irréversible</strong>.
-        </div>
-        <button onClick={openModal} style={{ width: '100%', height: 42, borderRadius: 12, background: '#DC2626', border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-          🗑️ Réinitialiser le site
-        </button>
+        <div style={{ fontSize: 12, color: '#6B6B6B', marginBottom: 12, lineHeight: 1.6 }}>Supprime tous les produits, commandes, catégories, abonnés et sections. <strong>Irréversible</strong>.</div>
+        <button onClick={openModal} style={{ width: '100%', height: 42, borderRadius: 12, background: '#DC2626', border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>🗑️ Réinitialiser le site</button>
       </div>
-
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '24px 20px', width: '100%', maxWidth: 360 }}>
@@ -1025,13 +971,13 @@ function ResetSiteButton({ accent }: { accent: string }) {
   )
 }
 
-// ── SettingsTab ───────────────────────────────────────────────────────────────
 function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChange: (c: string) => void }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [tempColor, setTempColor] = useState(accent)
   const [showProspects, setShowProspects] = useState(false)
+  const [, startTransition] = useTransition()
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
 
   const saveColor = async () => {
@@ -1051,8 +997,6 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
   return (
     <div>
       <Toast msg={toast} />
-
-      {/* Prospects bottom sheet */}
       {showProspects && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 800, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowProspects(false)}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#F2F2F7', borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 480, maxHeight: '88vh', overflowY: 'auto', padding: '20px 12px 36px' }}>
@@ -1067,17 +1011,14 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
           </div>
         </div>
       )}
-
       <h3 style={{ fontSize: 16, fontWeight: 900, marginBottom: 14 }}>Réglages</h3>
-
-      {/* Couleur */}
       <div style={{ background: '#fff', borderRadius: 16, padding: 16, marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 12 }}>🎨 Couleur du site</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
           {PRESETS.map(c => (
-            <button key={c.hex} onClick={() => setTempColor(c.hex)} title={c.label} style={{ width: 36, height: 36, borderRadius: '50%', background: c.hex, border: 'none', cursor: 'pointer', outline: tempColor === c.hex ? `3px solid ${c.hex}` : '3px solid transparent', outlineOffset: 3, boxShadow: '0 2px 8px rgba(0,0,0,.2)' }} />
+            <button key={c.hex} onClick={() => startTransition(() => setTempColor(c.hex))} title={c.label} style={{ width: 36, height: 36, borderRadius: '50%', background: c.hex, border: 'none', cursor: 'pointer', outline: tempColor === c.hex ? `3px solid ${c.hex}` : '3px solid transparent', outlineOffset: 3, boxShadow: '0 2px 8px rgba(0,0,0,.2)' }} />
           ))}
-          <input type="color" value={tempColor} onChange={e => setTempColor(e.target.value)} style={{ width: 36, height: 36, borderRadius: '50%', border: '2px dashed #E5E5EA', cursor: 'pointer', padding: 2 }} />
+          <input type="color" value={tempColor} onChange={e => { const val = e.target.value; startTransition(() => setTempColor(val)) }} style={{ width: 36, height: 36, borderRadius: '50%', border: '2px dashed #E5E5EA', cursor: 'pointer', padding: 2 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: tempColor }} />
@@ -1087,19 +1028,11 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
           {saving ? 'Enregistrement…' : 'Appliquer cette couleur'}
         </button>
       </div>
-
-      {/* Prospects */}
       <div style={{ background: '#fff', borderRadius: 16, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 4 }}>🧪 Prospects</div>
-        <div style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 12, lineHeight: 1.5 }}>
-          Commandes reçues en mode test — à relancer quand le stock est disponible.
-        </div>
-        <button onClick={() => setShowProspects(true)} style={{ width: '100%', height: 42, borderRadius: 12, background: '#FFF9E6', border: '1.5px solid #FDE68A', color: '#B45309', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-          🧪 Voir les prospects
-        </button>
+        <div style={{ fontSize: 12, color: '#AEAEB2', marginBottom: 12, lineHeight: 1.5 }}>Commandes reçues en mode test — à relancer quand le stock est disponible.</div>
+        <button onClick={() => setShowProspects(true)} style={{ width: '100%', height: 42, borderRadius: 12, background: '#FFF9E6', border: '1.5px solid #FDE68A', color: '#B45309', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>🧪 Voir les prospects</button>
       </div>
-
-      {/* Navigation rapide */}
       <div style={{ background: '#fff', borderRadius: 16, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 12 }}>🔗 Navigation rapide</div>
         {[
@@ -1118,20 +1051,14 @@ function SettingsTab({ accent, onAccentChange }: { accent: string; onAccentChang
           </div>
         ))}
       </div>
-
       <ResetSiteButton accent={accent} />
-
-      <button
-        onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }}
-        style={{ width: '100%', height: 38, borderRadius: 12, background: 'none', border: '1.5px solid #E5E5EA', color: '#AEAEB2', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 10 }}
-      >
+      <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} style={{ width: '100%', height: 38, borderRadius: 12, background: 'none', border: '1.5px solid #E5E5EA', color: '#AEAEB2', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 10 }}>
         🚪 Se déconnecter
       </button>
     </div>
   )
 }
 
-// ── Page principale ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [tab, setTab] = useState<'overview' | 'products' | 'orders' | 'auto' | 'settings'>('overview')
   const [accent, setAccent] = useState('#FF2D55')
@@ -1145,7 +1072,7 @@ export default function AdminPage() {
     cancelled: 0, new_orders: 0,
     taux_livraison: 0, taux_annulation: 0,
   })
-  
+
   useEffect(() => {
     supabase.from('settings').select('key, value').then(({ data }) => {
       const c = (data || []).find((r: any) => r.key === 'primary_color')
@@ -1157,47 +1084,21 @@ export default function AdminPage() {
       const today = new Date().toISOString().slice(0, 10)
       const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
-
-      // Toutes les commandes réelles
-      const { data: allOrders } = await supabase
-        .from('orders')
-        .select('total_price, created_at, status')
-        .eq('is_test', false)
-        .order('created_at', { ascending: false })
-
-      const { data: latest } = await supabase
-        .from('orders')
-        .select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, product:product_id(name)')
-        .eq('is_test', false)
-        .order('created_at', { ascending: false })
-        .limit(1)
-
+      const { data: allOrders } = await supabase.from('orders').select('total_price, created_at, status').eq('is_test', false).order('created_at', { ascending: false })
+      const { data: latest } = await supabase.from('orders').select('id, order_number, customer_name, customer_phone, customer_district, product_id, total_price, status, created_at, product:product_id(name)').eq('is_test', false).order('created_at', { ascending: false }).limit(1)
       if (latest?.[0]) setLatestOrder(latest[0] as unknown as Order)
-
       const rows = allOrders || []
-
-      // Aujourd'hui
       const todayRows = rows.filter((o: any) => o.created_at?.startsWith(today))
       const ca_today = todayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
       const orders_today = todayRows.length
-
-      // Hier
       const yesterdayRows = rows.filter((o: any) => o.created_at?.startsWith(yesterday))
       const ca_yesterday = yesterdayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
       const orders_yesterday = yesterdayRows.length
-
-      // Ce mois
       const monthRows = rows.filter((o: any) => o.created_at >= monthStart)
       const ca_month = monthRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0)
       const orders_month = monthRows.length
-
-      // Total
       const orders_total = rows.filter((o: any) => o.status !== 'annule').length
-      const panier_moyen = orders_total > 0
-        ? rows.filter((o: any) => o.status !== 'annule').reduce((a: number, o: any) => a + (o.total_price || 0), 0) / orders_total
-        : 0
-
-      // Graphique 7 jours
+      const panier_moyen = orders_total > 0 ? rows.filter((o: any) => o.status !== 'annule').reduce((a: number, o: any) => a + (o.total_price || 0), 0) / orders_total : 0
       const ca_week: number[] = [], orders_week: number[] = []
       for (let i = 6; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i)
@@ -1206,43 +1107,19 @@ export default function AdminPage() {
         ca_week.push(dayRows.reduce((a: number, o: any) => a + (o.total_price || 0), 0))
         orders_week.push(dayRows.length)
       }
-
       setStats({ ca_today, orders_today, orders_total, panier_moyen, ca_week, orders_week })
-
-      // Entonnoir avec vraies données Supabase
       const formCount = rows.filter((o: any) => o.status !== 'annule').length
       const orderCount = rows.filter((o: any) => ['confirme', 'livre'].includes(o.status)).length
       const deliveredCount = rows.filter((o: any) => o.status === 'livre').length
       const cancelledCount = rows.filter((o: any) => o.status === 'annule').length
       const newCount = rows.filter((o: any) => o.status === 'nouveau').length
-
-      // Produits publiés pour estimer les vues
-      const { count: productCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_published', true)
-
-      // Visiteurs estimés via GA4 — pour l'instant on garde une estimation réaliste
-      // Quand GA4 API sera connectée ce sera remplacé par les vraies données
+      const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true)
       const estimatedVisitors = Math.max(formCount * 8, (productCount || 0) * 12)
       const estimatedProductViews = Math.max(formCount * 4, (productCount || 0) * 6)
-
-      setFunnel({
-        visitors: estimatedVisitors,
-        product_views: estimatedProductViews,
-        forms: formCount,
-        orders: orderCount,
-        delivered: deliveredCount
-      })
-
-      // Nouvelles stats supplémentaires
+      setFunnel({ visitors: estimatedVisitors, product_views: estimatedProductViews, forms: formCount, orders: orderCount, delivered: deliveredCount })
       setExtraStats({
-        ca_yesterday,
-        orders_yesterday,
-        ca_month,
-        orders_month,
-        cancelled: cancelledCount,
-        new_orders: newCount,
+        ca_yesterday, orders_yesterday, ca_month, orders_month,
+        cancelled: cancelledCount, new_orders: newCount,
         taux_livraison: formCount > 0 ? Math.round((deliveredCount / formCount) * 100) : 0,
         taux_annulation: formCount > 0 ? Math.round((cancelledCount / formCount) * 100) : 0,
       })
@@ -1262,8 +1139,6 @@ export default function AdminPage() {
     <>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } button { font-family: inherit; } ::-webkit-scrollbar { width: 0; height: 0; }`}</style>
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#F2F2F7', maxWidth: 480, margin: '0 auto' }}>
-
-        {/* Header */}
         <div style={{ background: '#fff', borderBottom: '1px solid #E5E5EA', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg,${accent},${accent}bb)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16, flexShrink: 0 }}>{siteName[0]}</div>
           <div style={{ flex: 1 }}>
@@ -1278,8 +1153,6 @@ export default function AdminPage() {
             <span style={{ fontSize: 11, fontWeight: 800, color: '#6B6B6B' }}>Voir le site</span>
           </a>
         </div>
-
-        {/* Contenu */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 4px' }}>
           {tab === 'overview' && <OverviewTab stats={stats} extraStats={extraStats} latestOrder={latestOrder} accent={accent} funnel={funnel} />}
           {tab === 'products' && <ProductsTab accent={accent} />}
@@ -1288,8 +1161,6 @@ export default function AdminPage() {
           {tab === 'settings' && <SettingsTab accent={accent} onAccentChange={setAccent} />}
           <div style={{ height: 16 }} />
         </div>
-
-        {/* Bottom nav */}
         <div style={{ background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(20px)', borderTop: '1px solid #E5E5EA', display: 'flex', padding: '6px 0 8px', flexShrink: 0 }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '4px 0 6px', fontFamily: 'inherit' }}>
